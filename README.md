@@ -109,4 +109,12 @@ This is an experimental research project. Please ensure you understand the risks
 
 ## License
 
-[To be determined based on runtime dependencies and legal considerations]
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+### Why MIT License?
+- ✅ **Maximum Compatibility** with Microsoft .NET ecosystem
+- ✅ **Commercial-Friendly** for enterprise adoption
+- ✅ **Patent Protection** with implicit patent grants
+- ✅ **Industry Standard** used by major .NET projects
+
+The MIT License enables both open-source contributions and commercial derivatives while maintaining compatibility with Microsoft's .NET licensing terms.
