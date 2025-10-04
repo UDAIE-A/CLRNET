@@ -1,0 +1,51 @@
+{
+  "devices": [
+    {
+      "name": "Lumia 920",
+      "ip": "192.168.1.100",
+      "port": 11381,
+      "platform": "ARM",
+      "osVersion": "8.1",
+      "description": "Primary test device"
+    },
+    {
+      "name": "Lumia 1020",
+      "ip": "192.168.1.101", 
+      "port": 11381,
+      "platform": "ARM",
+      "osVersion": "8.1",
+      "description": "Secondary test device"
+    },
+    {
+      "name": "WP81Emulator",
+      "ip": "169.254.80.80",
+      "port": 11381,
+      "platform": "ARM",
+      "osVersion": "8.1",
+      "description": "Windows Phone 8.1 Emulator"
+    }
+  ],
+  "deployment": {
+    "timeout": 30000,
+    "retries": 3,
+    "cleanInstall": true,
+    "backupBeforeDeploy": true,
+    "verifyAfterDeploy": true
+  },
+  "monitoring": {
+    "interval": 1000,
+    "metrics": ["CPU", "Memory", "Battery", "Network"],
+    "thresholds": {
+      "cpuUsage": 80,
+      "memoryUsage": 150,
+      "batteryDrain": 5
+    },
+    "logLevel": "INFO"
+  },
+  "paths": {
+    "buildOutput": "../build/output",
+    "packages": "../build/output/packages", 
+    "logs": "./logs",
+    "temp": "./temp"
+  }
+}

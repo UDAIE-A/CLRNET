@@ -1,0 +1,5 @@
+// Mock ARM32 WinRT object file for HardwareAccess
+// Target: Windows Phone 8.1 ARM
+// WinRT Support: Enabled
+// COM Interop: Enabled
+// Generated: 10/04/2025 13:33:35

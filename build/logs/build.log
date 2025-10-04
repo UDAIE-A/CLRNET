@@ -1,0 +1,160 @@
+[2025-10-04 13:05:22] [INFO] Starting CLRNET build - Target: ValidateEnvironment, Platform: ARM, Configuration: Release
+[2025-10-04 13:05:22] [ERROR] Build script failed with exception: The term '!Test-BuildEnvironment' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.
+[2025-10-04 13:05:57] [INFO] Starting CLRNET build - Target: ValidateEnvironment, Platform: ARM, Configuration: Release
+[2025-10-04 13:05:57] [INFO] Validating build environment...
+[2025-10-04 13:05:57] [INFO] Found Visual Studio at: C:\Program Files (x86)\Microsoft Visual Studio\2019
+[2025-10-04 13:05:57] [INFO] Found Windows Phone 8.1 SDK at: C:\Program Files (x86)\Windows Phone Kits\8.1
+[2025-10-04 13:05:57] [INFO] Found MSBuild at: C:\Program Files (x86)\MSBuild\14.0\Bin\MSBuild.exe
+[2025-10-04 13:05:57] [INFO] Environment validation completed successfully
+[2025-10-04 13:05:57] [INFO] Build script completed successfully
+[2025-10-04 13:15:29] [INFO] Starting CLRNET build - Target: Build, Platform: ARM, Configuration: Debug
+[2025-10-04 13:15:29] [INFO] Validating build environment...
+[2025-10-04 13:15:29] [INFO] Found Visual Studio at: C:\Program Files (x86)\Microsoft Visual Studio\2019
+[2025-10-04 13:15:29] [INFO] Found Windows Phone 8.1 SDK at: C:\Program Files (x86)\Windows Phone Kits\8.1
+[2025-10-04 13:15:29] [INFO] Found MSBuild at: C:\Program Files (x86)\MSBuild\14.0\Bin\MSBuild.exe
+[2025-10-04 13:15:29] [INFO] Building CLRNET runtime for ARM/Debug...
+[2025-10-04 13:15:29] [INFO] Compiling Core Execution Engine...
+[2025-10-04 13:15:29] [ERROR] Build script failed with exception: Cannot bind argument to parameter 'Path' because it is null.
+[2025-10-04 13:15:49] [INFO] Starting CLRNET build - Target: Build, Platform: ARM, Configuration: Debug
+[2025-10-04 13:15:49] [INFO] Validating build environment...
+[2025-10-04 13:15:49] [INFO] Found Visual Studio at: C:\Program Files (x86)\Microsoft Visual Studio\2019
+[2025-10-04 13:15:49] [INFO] Found Windows Phone 8.1 SDK at: C:\Program Files (x86)\Windows Phone Kits\8.1
+[2025-10-04 13:15:49] [INFO] Found MSBuild at: C:\Program Files (x86)\MSBuild\14.0\Bin\MSBuild.exe
+[2025-10-04 13:15:49] [INFO] Building CLRNET runtime for ARM/Debug...
+[2025-10-04 13:15:49] [INFO] Compiling Core Execution Engine...
+[2025-10-04 13:15:49] [INFO] Simulating ARM32 compilation...
+[2025-10-04 13:15:49] [INFO] Generated: CoreExecutionEngine.obj
+[2025-10-04 13:15:49] [INFO] Generated: TypeSystem.obj
+[2025-10-04 13:15:49] [INFO] Generated: GarbageCollector.obj
+[2025-10-04 13:15:49] [INFO] Generated: AssemblyLoader.obj
+[2025-10-04 13:15:49] [INFO] Generated: SimpleJIT.obj
+[2025-10-04 13:15:49] [INFO] Generated: clrnet.dll
+[2025-10-04 13:15:49] [INFO] ARM32 compilation simulation completed successfully
+[2025-10-04 13:15:49] [INFO] Building test application for ARM/Debug...
+[2025-10-04 13:15:49] [INFO] Test application prepared
+[2025-10-04 13:15:49] [INFO] Build completed successfully
+[2025-10-04 13:15:49] [INFO] Build script completed successfully
+[2025-10-04 13:15:54] [INFO] Starting CLRNET build - Target: Package, Platform: ARM, Configuration: Debug
+[2025-10-04 13:15:54] [INFO] Validating build environment...
+[2025-10-04 13:15:54] [INFO] Found Visual Studio at: C:\Program Files (x86)\Microsoft Visual Studio\2019
+[2025-10-04 13:15:54] [INFO] Found Windows Phone 8.1 SDK at: C:\Program Files (x86)\Windows Phone Kits\8.1
+[2025-10-04 13:15:54] [INFO] Found MSBuild at: C:\Program Files (x86)\MSBuild\14.0\Bin\MSBuild.exe
+[2025-10-04 13:15:54] [INFO] Creating deployment package...
+[2025-10-04 13:15:55] [INFO] Package created: C:\Users\udayk\Videos\CLRNET\build\output\packages\clrnet-runtime-ARM-Debug.zip
+[2025-10-04 13:15:55] [INFO] Build script completed successfully
+[2025-10-04 13:31:54] [INFO] Starting CLRNET build - Target: Build, Platform: ARM, Configuration: Release
+[2025-10-04 13:31:54] [INFO] Validating build environment...
+[2025-10-04 13:31:54] [INFO] Found Visual Studio at: C:\Program Files (x86)\Microsoft Visual Studio\2019
+[2025-10-04 13:31:54] [INFO] Found Windows Phone 8.1 SDK at: C:\Program Files (x86)\Windows Phone Kits\8.1
+[2025-10-04 13:31:54] [INFO] Found MSBuild at: C:\Program Files (x86)\MSBuild\14.0\Bin\MSBuild.exe
+[2025-10-04 13:31:54] [INFO] Building CLRNET runtime for ARM/Release...
+[2025-10-04 13:31:54] [INFO] Compiling Core Execution Engine...
+[2025-10-04 13:31:54] [INFO] Simulating ARM32 compilation...
+[2025-10-04 13:31:54] [INFO] Generated: CoreExecutionEngine.obj
+[2025-10-04 13:31:54] [INFO] Generated: TypeSystem.obj
+[2025-10-04 13:31:54] [INFO] Generated: GarbageCollector.obj
+[2025-10-04 13:31:54] [INFO] Generated: AssemblyLoader.obj
+[2025-10-04 13:31:54] [INFO] Generated: SimpleJIT.obj
+[2025-10-04 13:31:54] [INFO] Generated: clrnet.dll
+[2025-10-04 13:31:54] [INFO] ARM32 compilation simulation completed successfully
+[2025-10-04 13:31:54] [INFO] Building test application for ARM/Release...
+[2025-10-04 13:31:54] [INFO] Test application prepared
+[2025-10-04 13:31:54] [INFO] Build completed successfully
+[2025-10-04 13:31:54] [INFO] Build script completed successfully
+[2025-10-04 13:31:54] [INFO] Building CLRNET runtime for ARM/Release...
+[2025-10-04 13:31:54] [INFO] Compiling Core Execution Engine...
+[2025-10-04 13:31:54] [INFO] Simulating ARM32 compilation...
+[2025-10-04 13:31:54] [INFO] Generated: CoreExecutionEngine.obj
+[2025-10-04 13:31:54] [INFO] Generated: TypeSystem.obj
+[2025-10-04 13:31:54] [INFO] Generated: GarbageCollector.obj
+[2025-10-04 13:31:54] [INFO] Generated: AssemblyLoader.obj
+[2025-10-04 13:31:54] [INFO] Generated: SimpleJIT.obj
+[2025-10-04 13:31:54] [INFO] Generated: clrnet.dll
+[2025-10-04 13:31:54] [INFO] ARM32 compilation simulation completed successfully
+[2025-10-04 13:32:12] [INFO] Starting CLRNET build - Target: Build, Platform: ARM, Configuration: Release
+[2025-10-04 13:32:12] [INFO] Validating build environment...
+[2025-10-04 13:32:12] [INFO] Found Visual Studio at: C:\Program Files (x86)\Microsoft Visual Studio\2019
+[2025-10-04 13:32:12] [INFO] Found Windows Phone 8.1 SDK at: C:\Program Files (x86)\Windows Phone Kits\8.1
+[2025-10-04 13:32:12] [INFO] Found MSBuild at: C:\Program Files (x86)\MSBuild\14.0\Bin\MSBuild.exe
+[2025-10-04 13:32:12] [INFO] Building CLRNET runtime for ARM/Release...
+[2025-10-04 13:32:12] [INFO] Compiling Core Execution Engine...
+[2025-10-04 13:32:12] [INFO] Simulating ARM32 compilation...
+[2025-10-04 13:32:12] [INFO] Generated: CoreExecutionEngine.obj
+[2025-10-04 13:32:12] [INFO] Generated: TypeSystem.obj
+[2025-10-04 13:32:12] [INFO] Generated: GarbageCollector.obj
+[2025-10-04 13:32:12] [INFO] Generated: AssemblyLoader.obj
+[2025-10-04 13:32:12] [INFO] Generated: SimpleJIT.obj
+[2025-10-04 13:32:12] [INFO] Generated: clrnet.dll
+[2025-10-04 13:32:12] [INFO] ARM32 compilation simulation completed successfully
+[2025-10-04 13:32:12] [INFO] Building test application for ARM/Release...
+[2025-10-04 13:32:12] [INFO] Test application prepared
+[2025-10-04 13:32:12] [INFO] Build completed successfully
+[2025-10-04 13:32:12] [INFO] Build script completed successfully
+[2025-10-04 13:32:12] [INFO] Building CLRNET runtime for ARM/Release...
+[2025-10-04 13:32:12] [INFO] Compiling Core Execution Engine...
+[2025-10-04 13:32:12] [INFO] Simulating ARM32 compilation...
+[2025-10-04 13:32:12] [INFO] Generated: CoreExecutionEngine.obj
+[2025-10-04 13:32:12] [INFO] Generated: TypeSystem.obj
+[2025-10-04 13:32:12] [INFO] Generated: GarbageCollector.obj
+[2025-10-04 13:32:12] [INFO] Generated: AssemblyLoader.obj
+[2025-10-04 13:32:12] [INFO] Generated: SimpleJIT.obj
+[2025-10-04 13:32:12] [INFO] Generated: clrnet.dll
+[2025-10-04 13:32:12] [INFO] ARM32 compilation simulation completed successfully
+[2025-10-04 13:33:11] [INFO] Starting CLRNET build - Target: Build, Platform: ARM, Configuration: Release
+[2025-10-04 13:33:11] [INFO] Validating build environment...
+[2025-10-04 13:33:11] [INFO] Found Visual Studio at: C:\Program Files (x86)\Microsoft Visual Studio\2019
+[2025-10-04 13:33:11] [INFO] Found Windows Phone 8.1 SDK at: C:\Program Files (x86)\Windows Phone Kits\8.1
+[2025-10-04 13:33:11] [INFO] Found MSBuild at: C:\Program Files (x86)\MSBuild\14.0\Bin\MSBuild.exe
+[2025-10-04 13:33:11] [INFO] Building CLRNET runtime for ARM/Release...
+[2025-10-04 13:33:11] [INFO] Compiling Core Execution Engine...
+[2025-10-04 13:33:11] [INFO] Simulating ARM32 compilation...
+[2025-10-04 13:33:11] [INFO] Generated: CoreExecutionEngine.obj
+[2025-10-04 13:33:11] [INFO] Generated: TypeSystem.obj
+[2025-10-04 13:33:11] [INFO] Generated: GarbageCollector.obj
+[2025-10-04 13:33:11] [INFO] Generated: AssemblyLoader.obj
+[2025-10-04 13:33:11] [INFO] Generated: SimpleJIT.obj
+[2025-10-04 13:33:11] [INFO] Generated: clrnet.dll
+[2025-10-04 13:33:11] [INFO] ARM32 compilation simulation completed successfully
+[2025-10-04 13:33:11] [INFO] Building test application for ARM/Release...
+[2025-10-04 13:33:11] [INFO] Test application prepared
+[2025-10-04 13:33:11] [INFO] Build completed successfully
+[2025-10-04 13:33:11] [INFO] Build script completed successfully
+[2025-10-04 13:33:11] [INFO] Building CLRNET runtime for ARM/Release...
+[2025-10-04 13:33:11] [INFO] Compiling Core Execution Engine...
+[2025-10-04 13:33:11] [INFO] Simulating ARM32 compilation...
+[2025-10-04 13:33:11] [INFO] Generated: CoreExecutionEngine.obj
+[2025-10-04 13:33:11] [INFO] Generated: TypeSystem.obj
+[2025-10-04 13:33:11] [INFO] Generated: GarbageCollector.obj
+[2025-10-04 13:33:11] [INFO] Generated: AssemblyLoader.obj
+[2025-10-04 13:33:11] [INFO] Generated: SimpleJIT.obj
+[2025-10-04 13:33:11] [INFO] Generated: clrnet.dll
+[2025-10-04 13:33:11] [INFO] ARM32 compilation simulation completed successfully
+[2025-10-04 13:33:32] [INFO] Starting CLRNET build - Target: Build, Platform: ARM, Configuration: Release
+[2025-10-04 13:33:32] [INFO] Validating build environment...
+[2025-10-04 13:33:32] [INFO] Found Visual Studio at: C:\Program Files (x86)\Microsoft Visual Studio\2019
+[2025-10-04 13:33:32] [INFO] Found Windows Phone 8.1 SDK at: C:\Program Files (x86)\Windows Phone Kits\8.1
+[2025-10-04 13:33:32] [INFO] Found MSBuild at: C:\Program Files (x86)\MSBuild\14.0\Bin\MSBuild.exe
+[2025-10-04 13:33:32] [INFO] Building CLRNET runtime for ARM/Release...
+[2025-10-04 13:33:32] [INFO] Compiling Core Execution Engine...
+[2025-10-04 13:33:32] [INFO] Simulating ARM32 compilation...
+[2025-10-04 13:33:32] [INFO] Generated: CoreExecutionEngine.obj
+[2025-10-04 13:33:32] [INFO] Generated: TypeSystem.obj
+[2025-10-04 13:33:32] [INFO] Generated: GarbageCollector.obj
+[2025-10-04 13:33:32] [INFO] Generated: AssemblyLoader.obj
+[2025-10-04 13:33:32] [INFO] Generated: SimpleJIT.obj
+[2025-10-04 13:33:32] [INFO] Generated: clrnet.dll
+[2025-10-04 13:33:32] [INFO] ARM32 compilation simulation completed successfully
+[2025-10-04 13:33:32] [INFO] Building test application for ARM/Release...
+[2025-10-04 13:33:32] [INFO] Test application prepared
+[2025-10-04 13:33:32] [INFO] Build completed successfully
+[2025-10-04 13:33:33] [INFO] Build script completed successfully
+[2025-10-04 13:33:33] [INFO] Building CLRNET runtime for ARM/Release...
+[2025-10-04 13:33:33] [INFO] Compiling Core Execution Engine...
+[2025-10-04 13:33:33] [INFO] Simulating ARM32 compilation...
+[2025-10-04 13:33:33] [INFO] Generated: CoreExecutionEngine.obj
+[2025-10-04 13:33:33] [INFO] Generated: TypeSystem.obj
+[2025-10-04 13:33:33] [INFO] Generated: GarbageCollector.obj
+[2025-10-04 13:33:33] [INFO] Generated: AssemblyLoader.obj
+[2025-10-04 13:33:33] [INFO] Generated: SimpleJIT.obj
+[2025-10-04 13:33:33] [INFO] Generated: clrnet.dll
+[2025-10-04 13:33:33] [INFO] ARM32 compilation simulation completed successfully
