@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  
+  <!-- Solution Configuration -->
+  <PropertyGroup>
+    <SolutionDir>$(MSBuildThisFileDirectory)</SolutionDir>
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+    <Platform Condition="'$(Platform)' == ''">ARM</Platform>
+    <PlatformToolset>v120_wp81</PlatformToolset>
+    <WindowsPhoneToolset>8.1</WindowsPhoneToolset>
+    <TargetPlatformVersion>8.1</TargetPlatformVersion>
+    <OutputPath>$(SolutionDir)build\bin\$(Platform)\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>$(SolutionDir)build\obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
+  </PropertyGroup>
+
+  <!-- Global Build Settings -->
+  <PropertyGroup>
+    <CharacterSet>Unicode</CharacterSet>
+    <UseDebugLibraries Condition="'$(Configuration)' == 'Debug'">true</UseDebugLibraries>
+    <UseDebugLibraries Condition="'$(Configuration)' == 'Release'">false</UseDebugLibraries>
+    <WholeProgramOptimization Condition="'$(Configuration)' == 'Release'">true</WholeProgramOptimization>
+    <RuntimeLibrary Condition="'$(Configuration)' == 'Debug'">MultiThreadedDebugDLL</RuntimeLibrary>
+    <RuntimeLibrary Condition="'$(Configuration)' == 'Release'">MultiThreadedDLL</RuntimeLibrary>
+  </PropertyGroup>
+
+  <!-- Compiler Settings -->
+  <ItemDefinitionGroup Condition="'$(Configuration)' == 'Debug'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;CLRNET_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalIncludeDirectories>$(SolutionDir)src;$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)' == 'Release'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;CLRNET_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalIncludeDirectories>$(SolutionDir)src;$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Windows</SubSystem>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <!-- Project References -->
+  <ItemGroup>
+    <ProjectReference Include="src\CLRNetCore\CLRNetCore.vcxproj">
+      <Project>{12345678-1234-5678-9012-123456789012}</Project>
+      <Name>CLRNetCore</Name>
+    </ProjectReference>
+    <ProjectReference Include="src\CLRNetInterop\CLRNetInterop.vcxproj">
+      <Project>{12345678-1234-5678-9012-123456789013}</Project>
+      <Name>CLRNetInterop</Name>
+    </ProjectReference>
+    <ProjectReference Include="src\CLRNetSystem\CLRNetSystem.vcxproj">
+      <Project>{12345678-1234-5678-9012-123456789014}</Project>
+      <Name>CLRNetSystem</Name>
+    </ProjectReference>
+    <ProjectReference Include="tests\CLRNetTests\CLRNetTests.vcxproj">
+      <Project>{12345678-1234-5678-9012-123456789015}</Project>
+      <Name>CLRNetTests</Name>
+    </ProjectReference>
+  </ItemGroup>
+
+  <!-- Build Targets -->
+  <Target Name="BuildCore">
+    <MSBuild Projects="src\CLRNetCore\CLRNetCore.vcxproj" Properties="Configuration=$(Configuration);Platform=$(Platform)" />
+  </Target>
+
+  <Target Name="BuildInterop" DependsOnTargets="BuildCore">
+    <MSBuild Projects="src\CLRNetInterop\CLRNetInterop.vcxproj" Properties="Configuration=$(Configuration);Platform=$(Platform)" />
+  </Target>
+
+  <Target Name="BuildSystem" DependsOnTargets="BuildCore;BuildInterop">
+    <MSBuild Projects="src\CLRNetSystem\CLRNetSystem.vcxproj" Properties="Configuration=$(Configuration);Platform=$(Platform)" />
+  </Target>
+
+  <Target Name="BuildTests" DependsOnTargets="BuildCore;BuildInterop;BuildSystem">
+    <MSBuild Projects="tests\CLRNetTests\CLRNetTests.vcxproj" Properties="Configuration=$(Configuration);Platform=$(Platform)" />
+  </Target>
+
+  <Target Name="Build" DependsOnTargets="BuildCore;BuildInterop;BuildSystem;BuildTests">
+    <Message Text="CLRNet Runtime build completed successfully!" Importance="high" />
+  </Target>
+
+  <!-- Clean Target -->
+  <Target Name="Clean">
+    <RemoveDir Directories="$(OutputPath)" />
+    <RemoveDir Directories="$(IntermediateOutputPath)" />
+    <MSBuild Projects="src\CLRNetCore\CLRNetCore.vcxproj" Targets="Clean" Properties="Configuration=$(Configuration);Platform=$(Platform)" />
+    <MSBuild Projects="src\CLRNetInterop\CLRNetInterop.vcxproj" Targets="Clean" Properties="Configuration=$(Configuration);Platform=$(Platform)" />
+    <MSBuild Projects="src\CLRNetSystem\CLRNetSystem.vcxproj" Targets="Clean" Properties="Configuration=$(Configuration);Platform=$(Platform)" />
+    <MSBuild Projects="tests\CLRNetTests\CLRNetTests.vcxproj" Targets="Clean" Properties="Configuration=$(Configuration);Platform=$(Platform)" />
+  </Target>
+
+  <!-- Package Target -->
+  <Target Name="Package" DependsOnTargets="Build">
+    <ItemGroup>
+      <CoreBinaries Include="$(OutputPath)CLRNetCore.dll;$(OutputPath)CLRNetHost.exe;$(OutputPath)CLRNetJIT.dll;$(OutputPath)CLRNetGC.dll" />
+      <InteropBinaries Include="$(OutputPath)CLRNetInterop.dll;$(OutputPath)CLRNetWinRT.dll;$(OutputPath)CLRNetHardware.dll;$(OutputPath)CLRNetSecurity.dll" />
+      <SystemBinaries Include="$(OutputPath)CLRNetReplacer.exe;$(OutputPath)CLRNetHooks.dll;$(OutputPath)CLRNetCompat.dll;$(OutputPath)CLRNetSafety.dll" />
+    </ItemGroup>
+
+    <!-- Create deployment packages -->
+    <MakeDir Directories="$(OutputPath)packages\" />
+    
+    <!-- Core Runtime Package -->
+    <Copy SourceFiles="@(CoreBinaries)" DestinationFolder="$(OutputPath)packages\CLRNet-Runtime\" />
+    
+    <!-- Interop Package -->
+    <Copy SourceFiles="@(InteropBinaries)" DestinationFolder="$(OutputPath)packages\CLRNet-Interop\" />
+    
+    <!-- System Package -->
+    <Copy SourceFiles="@(SystemBinaries)" DestinationFolder="$(OutputPath)packages\CLRNet-System\" />
+    
+    <!-- Complete Package -->
+    <Copy SourceFiles="@(CoreBinaries);@(InteropBinaries);@(SystemBinaries)" DestinationFolder="$(OutputPath)packages\CLRNet-Complete\" />
+
+    <Message Text="Deployment packages created in $(OutputPath)packages\" Importance="high" />
+  </Target>
+
+</Project>

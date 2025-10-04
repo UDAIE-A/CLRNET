@@ -1,0 +1,15 @@
+Assets\Logo.png
+Assets\SmallLogo.png
+Assets\SplashScreen.png
+Assets\Square71x71Logo.png
+Assets\StoreLogo.png
+Assets\WideLogo.png
+App.xbf
+CLRNetSampleApp.xr.xml
+MainPage.xbf
+CLRNet\CLRNetCore.dll
+CLRNet\CLRNetHost.exe
+CLRNet\CLRNetInterop.dll
+CLRNet\CLRNetSystem.dll
+Properties\Default.rd.xml
+SamplePlugin.dll

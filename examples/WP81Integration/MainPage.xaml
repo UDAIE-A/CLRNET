@@ -1,0 +1,158 @@
+<!-- MainPage.xaml - Sample UI for CLRNet Integration -->
+<Page
+    x:Class="CLRNetSampleApp.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:CLRNetSampleApp"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Background="{ThemeResource PhoneAccentBrush}" Margin="20">
+            <TextBlock 
+                Text="CLRNet Runtime Demo" 
+                Style="{ThemeResource HeaderTextBlockStyle}" 
+                Foreground="White" 
+                HorizontalAlignment="Center"/>
+            <TextBlock 
+                Text="Windows Phone 8.1 Integration Sample" 
+                Style="{ThemeResource SubheaderTextBlockStyle}" 
+                Foreground="White" 
+                HorizontalAlignment="Center"
+                Margin="0,5,0,0"/>
+        </StackPanel>
+
+        <!-- Status Display -->
+        <Border Grid.Row="1" Background="{ThemeResource PhoneChromeBrush}" Margin="20">
+            <StackPanel>
+                <TextBlock Text="Runtime Status:" Style="{ThemeResource BodyTextBlockStyle}" Margin="0,0,0,5" FontSize="14"/>
+                <TextBlock x:Name="StatusText" 
+                          Text="Initializing CLRNet Runtime..." 
+                          Style="{ThemeResource BodyTextBlockStyle}"
+                          Foreground="{ThemeResource PhoneAccentBrush}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content Area -->
+        <ScrollViewer Grid.Row="2" Margin="20">
+            <StackPanel>
+                
+                <!-- Runtime Controls -->
+                <Border Background="{ThemeResource PhoneChromeBrush}" 
+                        CornerRadius="5" Margin="0,0,0,15" Padding="15">
+                    <StackPanel>
+                        <TextBlock Text="Runtime Operations" 
+                                  Style="{ThemeResource TitleTextBlockStyle}" 
+                                  Margin="0,0,0,10" FontSize="18"/>
+                        
+                        <Button x:Name="LoadSampleButton"
+                               Content="Load Sample Assembly"
+                               Click="LoadSampleButton_Click"
+                               IsEnabled="False"
+                               HorizontalAlignment="Stretch"
+                               Margin="0,5"/>
+                        
+                        <Button x:Name="ExecuteSampleButton"
+                               Content="Execute Sample Method"
+                               Click="ExecuteSampleButton_Click"
+                               IsEnabled="False"
+                               HorizontalAlignment="Stretch"
+                               Margin="0,5"/>
+                        
+                        <Button x:Name="ShutdownButton"
+                               Content="Shutdown Runtime"
+                               Click="ShutdownButton_Click"
+                               HorizontalAlignment="Stretch"
+                               Margin="0,5"
+                               Background="{ThemeResource PhoneAccentBrush}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Results Display -->
+                <Border Background="{ThemeResource PhoneChromeBrush}" 
+                        CornerRadius="5" Margin="0,0,0,15" Padding="15">
+                    <StackPanel>
+                        <TextBlock Text="Execution Results" 
+                                  Style="{ThemeResource TitleTextBlockStyle}" 
+                                  Margin="0,0,0,10" FontSize="18"/>
+                        
+                        <Border Background="{ThemeResource PhoneBackgroundBrush}"
+                               CornerRadius="3" Padding="10" MinHeight="100">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <TextBlock x:Name="ResultText" 
+                                          Text="No results yet. Execute a method to see output."
+                                          Style="{ThemeResource BodyTextBlockStyle}"
+                                          TextWrapping="Wrap"/>
+                            </ScrollViewer>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- Information Panel -->
+                <Border Background="{ThemeResource PhoneChromeBrush}" 
+                        CornerRadius="5" Margin="0,0,0,15" Padding="15">
+                    <StackPanel>
+                        <TextBlock Text="About CLRNet Runtime" 
+                                  Style="{ThemeResource TitleTextBlockStyle}" 
+                                  Margin="0,0,0,10" FontSize="18"/>
+                        
+                        <TextBlock TextWrapping="Wrap" Style="{ThemeResource BodyTextBlockStyle}">
+                            CLRNet is a custom .NET runtime designed for Windows Phone 8.1 applications. 
+                            It enables dynamic assembly loading, plugin systems, and runtime code execution.
+                        </TextBlock>
+                        
+                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                            <TextBlock Text="Runtime Version: " Style="{ThemeResource BodyTextBlockStyle}" FontSize="12"/>
+                            <TextBlock Text="1.0.0" Style="{ThemeResource BodyTextBlockStyle}" FontSize="12" FontWeight="Bold"/>
+                        </StackPanel>
+                        
+                        <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                            <TextBlock Text="Target Platform: " Style="{ThemeResource BodyTextBlockStyle}" FontSize="12"/>
+                            <TextBlock Text="Windows Phone 8.1 ARM" Style="{ThemeResource BodyTextBlockStyle}" FontSize="12" FontWeight="Bold"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Plugin System Demo -->
+                <Border Background="{ThemeResource PhoneChromeBrush}" 
+                        CornerRadius="5" Margin="0,0,0,15" Padding="15">
+                    <StackPanel>
+                        <TextBlock Text="Plugin System Features" 
+                                  Style="{ThemeResource TitleTextBlockStyle}" 
+                                  Margin="0,0,0,10" FontSize="18"/>
+                        
+                        <CheckBox Content="Dynamic Assembly Loading" IsChecked="True" IsEnabled="False"/>
+                        <CheckBox Content="Plugin Interface Support" IsChecked="True" IsEnabled="False"/>
+                        <CheckBox Content="Runtime Method Execution" IsChecked="True" IsEnabled="False"/>
+                        <CheckBox Content="Memory Management" IsChecked="True" IsEnabled="False"/>
+                        <CheckBox Content="Error Handling" IsChecked="True" IsEnabled="False"/>
+                        <CheckBox Content="ARM Optimization" IsChecked="True" IsEnabled="False"/>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Footer -->
+        <Border Grid.Row="3" Background="{ThemeResource PhoneChromeBrush}" Margin="20">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <TextBlock Text="CLRNet Runtime for Windows Phone 8.1" 
+                          Style="{ThemeResource BodyTextBlockStyle}"
+                          FontSize="12"
+                          VerticalAlignment="Center"/>
+                <Border Width="10"/>
+                <Ellipse Width="8" Height="8" Fill="{ThemeResource PhoneAccentBrush}"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Page>

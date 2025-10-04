@@ -1,0 +1,44 @@
+<!--
+    This file contains Runtime Directives used by .NET Native. The defaults here are suitable for most
+    developers. However, you can modify these parameters to modify the behavior of the .NET Native
+    optimizer.
+
+    Runtime Directives are documented at http://go.microsoft.com/fwlink/?LinkID=391919
+
+    To fully enable reflection for App1.MyClass and all of its public/private members
+    <Type Name="App1.MyClass" Dynamic="Required All" />
+
+    To enable dynamic creation of the specific instantiation of AppClass<T> over System.Int32
+    <TypeInstantiation Name="App1.AppClass" Arguments="System.Int32" Activate="Required Public" />
+
+    Using the Namespace directive to apply reflection policy to all the types in a particular namespace
+    <Namespace Name="DataClasses.ViewModels" Seralize="All" />
+-->
+
+<Directives xmlns="http://schemas.microsoft.com/netfx/2013/01/metadata">
+  <Application>
+    <!--
+      An Assembly element with Name="*Application*" applies to all assemblies in
+      the application package. The asterisks are not wildcards.
+    -->
+    <Assembly Name="*Application*" Dynamic="Required All" />
+    
+    <!-- CLRNet Runtime Assemblies -->
+    <Assembly Name="CLRNetCore" Dynamic="Required All" />
+    <Assembly Name="CLRNetInterop" Dynamic="Required All" />
+    <Assembly Name="CLRNetSystem" Dynamic="Required All" />
+    
+    <!-- Sample Plugin Assembly -->
+    <Assembly Name="SamplePlugin" Dynamic="Required All" />
+    
+    <!-- Enable reflection for CLRNet integration -->
+    <Type Name="CLRNetSampleApp.CLRNetManager" Dynamic="Required All" />
+    <Type Name="CLRNetSampleApp.MainPage" Dynamic="Required All" />
+    <Type Name="CLRNetSampleApp.App" Dynamic="Required All" />
+    
+    <!-- Enable serialization for session state management -->
+    <Type Name="System.Collections.Generic.Dictionary{System.String,System.Object}" Serialize="Required All" />
+    
+    <!-- Add any other assemblies your app may load that need reflection enabled here. -->
+  </Application>
+</Directives>

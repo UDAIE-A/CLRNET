@@ -1,0 +1,86 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Machine>DESKTOP-MEF34VB</Machine>
+    <WindowsUser>udayk</WindowsUser>
+    <TargetPlatformIdentifier>WindowsPhoneApp</TargetPlatformIdentifier>
+    <TargetOsVersion>6.3</TargetOsVersion>
+    <TargetOsDescription>Windows Phone 8.1</TargetOsDescription>
+    <SolutionConfiguration>Debug|AnyCPU</SolutionConfiguration>
+    <PackageArchitecture>neutral</PackageArchitecture>
+    <PackageIdentityName>12345678-1234-5678-9012-123456789012</PackageIdentityName>
+    <PackageIdentityPublisher>CN=CLRNet Developer</PackageIdentityPublisher>
+    <IntermediateOutputPath>C:\Users\udayk\Videos\CLRNET\examples\WP81Integration\obj\Debug\</IntermediateOutputPath>
+    <RemoteDeploymentType></RemoteDeploymentType>
+    <PackageRegistrationPath></PackageRegistrationPath>
+    <RemoveNonLayoutFiles>true</RemoveNonLayoutFiles>
+  </PropertyGroup>
+  <ItemGroup>
+    <AppXManifest Include="C:\Users\udayk\Videos\CLRNET\examples\WP81Integration\bin\Debug\AppxManifest.xml">
+      <PackagePath>AppxManifest.xml</PackagePath>
+      <ReRegisterAppIfChanged>true</ReRegisterAppIfChanged>
+    </AppXManifest>
+  </ItemGroup>
+  <ItemGroup>
+    <AppxPackagedFile Include="C:\Users\udayk\Videos\CLRNET\examples\WP81Integration\bin\Debug\CLRNetSampleApp.exe">
+      <PackagePath>CLRNetSampleApp.exe</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\udayk\Videos\CLRNET\examples\WP81Integration\Properties\Default.rd.xml">
+      <PackagePath>Properties\Default.rd.xml</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\udayk\Videos\CLRNET\examples\WP81Integration\Assets\Logo.png">
+      <PackagePath>Assets\Logo.png</PackagePath>
+      <ReRegisterAppIfChanged>true</ReRegisterAppIfChanged>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\udayk\Videos\CLRNET\examples\WP81Integration\Assets\SmallLogo.png">
+      <PackagePath>Assets\SmallLogo.png</PackagePath>
+      <ReRegisterAppIfChanged>true</ReRegisterAppIfChanged>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\udayk\Videos\CLRNET\examples\WP81Integration\Assets\SplashScreen.png">
+      <PackagePath>Assets\SplashScreen.png</PackagePath>
+      <ReRegisterAppIfChanged>true</ReRegisterAppIfChanged>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\udayk\Videos\CLRNET\examples\WP81Integration\Assets\Square71x71Logo.png">
+      <PackagePath>Assets\Square71x71Logo.png</PackagePath>
+      <ReRegisterAppIfChanged>true</ReRegisterAppIfChanged>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\udayk\Videos\CLRNET\examples\WP81Integration\Assets\StoreLogo.png">
+      <PackagePath>Assets\StoreLogo.png</PackagePath>
+      <ReRegisterAppIfChanged>true</ReRegisterAppIfChanged>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\udayk\Videos\CLRNET\examples\WP81Integration\Assets\WideLogo.png">
+      <PackagePath>Assets\WideLogo.png</PackagePath>
+      <ReRegisterAppIfChanged>true</ReRegisterAppIfChanged>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\udayk\Videos\CLRNET\examples\WP81Integration\CLRNet\CLRNetCore.dll">
+      <PackagePath>CLRNet\CLRNetCore.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\udayk\Videos\CLRNET\examples\WP81Integration\CLRNet\CLRNetInterop.dll">
+      <PackagePath>CLRNet\CLRNetInterop.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\udayk\Videos\CLRNET\examples\WP81Integration\CLRNet\CLRNetSystem.dll">
+      <PackagePath>CLRNet\CLRNetSystem.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\udayk\Videos\CLRNET\examples\WP81Integration\SamplePlugin.dll">
+      <PackagePath>SamplePlugin.dll</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\udayk\Videos\CLRNET\examples\WP81Integration\CLRNet\CLRNetHost.exe">
+      <PackagePath>CLRNet\CLRNetHost.exe</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\udayk\Videos\CLRNET\examples\WP81Integration\bin\Debug\CLRNetSampleApp.xr.xml">
+      <PackagePath>CLRNetSampleApp.xr.xml</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\udayk\Videos\CLRNET\examples\WP81Integration\bin\Debug\App.xbf">
+      <PackagePath>App.xbf</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\udayk\Videos\CLRNET\examples\WP81Integration\bin\Debug\MainPage.xbf">
+      <PackagePath>MainPage.xbf</PackagePath>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\Users\udayk\Videos\CLRNET\examples\WP81Integration\bin\Debug\resources.pri">
+      <PackagePath>resources.pri</PackagePath>
+      <ReRegisterAppIfChanged>true</ReRegisterAppIfChanged>
+    </AppxPackagedFile>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+</Project>
