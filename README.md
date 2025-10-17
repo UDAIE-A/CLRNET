@@ -70,6 +70,9 @@ CLRNET/
 
 ## 🚀 How to Use Your Runtime
 
+### Track A — App-Local BCL Overlay
+Developers looking to target newer .NET APIs on Windows Phone 8.1 can follow the [Track A roadmap](docs/TRACK-A-APP-LOCAL-BCL-OVERLAY.md) to ship app-local facade assemblies (e.g., `System.Runtime`, `System.Text.Json`). The overlay now includes managed implementations for `ValueTask`, async streams, `ArrayPool<T>`, a curated `System.Text.Json` subset, WinRT-backed IO helpers, and a hardened HTTP handler so modern libraries can resolve against CLRNET-provided implementations without modifying working system components. See the [App-Local Facade Overlay Integration Guide](docs/APP_LOCAL_OVERLAY_GUIDE.md) for step-by-step packaging instructions and manifest samples.
+
 ### Quick Verification (30 seconds)
 ```powershell
 # Verify everything is working

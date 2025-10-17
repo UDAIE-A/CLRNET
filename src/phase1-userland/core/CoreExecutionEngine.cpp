@@ -76,7 +76,9 @@ bool CoreExecutionEngine::InitializeSubsystems() {
         return false;
     }
 
-    // Set global assembly loader instance  
+    m_assemblyLoader->RefreshOverlayConfiguration();
+
+    // Set global assembly loader instance
     g_assemblyLoader = m_assemblyLoader.get();
 
     // Initialize JIT compiler
