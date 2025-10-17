@@ -70,6 +70,21 @@ CLRNET/
 
 ## 🚀 How to Use Your Runtime
 
+### Track A — App-Local BCL Overlay
+Developers looking to target newer .NET APIs on Windows Phone 8.1 can follow the [Track A roadmap](docs/TRACK-A-APP-LOCAL-BCL-OVERLAY.md) to ship app-local facade assemblies (e.g., `System.Runtime`, `System.Text.Json`). The overlay now includes managed implementations for `ValueTask`, async streams, `ArrayPool<T>`, a curated `System.Text.Json` subset, WinRT-backed IO helpers, and a hardened HTTP handler so modern libraries can resolve against CLRNET-provided implementations without modifying working system components. See the [App-Local Facade Overlay Integration Guide](docs/APP_LOCAL_OVERLAY_GUIDE.md) for step-by-step packaging instructions and manifest samples.
+
+### Track B — Userspace IL Engine
+Dynamic scenarios that rely on `Expression.Compile`, `DynamicMethod`, or other runtime codegen can now target the [Track B IL engine](docs/TRACK-B-USERSPACE-IL-ENGINE.md). The `CLRNet_VM_*` exports expose a sandboxed interpreter with bytecode caching, host-controlled syscalls, and call-site configuration so apps can compile IL once, persist the bytecode to `LocalCache/VmBytecode`, and execute under deterministic budgets without requiring the platform JIT.
+
+### Track C — Modern C# pipeline
+Leverage the [Track C build pipeline](docs/TRACK-C-MODERN-CS-PIPELINE.md) to compile with Roslyn `/langversion:latest`, automatically reference CLRNET's facade overlays, post-process assemblies with Mono.Cecil to retarget APIs, and optionally route `Expression.Compile()` through the Track B VM. The sample project in `examples/ModernCSharpPipeline` demonstrates records, ValueTask, JSON serialization, and VM-backed expressions working together on Windows Phone 8.1.
+
+### End-to-end integration playbook
+When starting a new app (or upgrading an existing one), follow the [CLRNET Application Integration Playbook](docs/CLRNET_APP_INTEGRATION_PLAYBOOK.md) for a stage-by-stage checklist that stitches Tracks A–C together—covering build configuration, IL post-processing, overlay packaging, VM warm-up, and on-device verification.
+
+### Executive comparison snapshot
+Need to brief stakeholders quickly? Share the [CLRNET vs. Windows Phone 8.1 overview](docs/CLRNET_VS_WP81_OVERVIEW.md) for a plain-language summary and capability coverage table.
+
 ### Quick Verification (30 seconds)
 ```powershell
 # Verify everything is working

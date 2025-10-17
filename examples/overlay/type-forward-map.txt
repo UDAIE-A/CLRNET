@@ -1,0 +1,26 @@
+# Example type forward manifest for CLRNET overlays
+# Lines starting with '#' or ';' are ignored.
+
+# Core runtime primitives
+ System.ValueTuple=CLRNet.Facade.System.ValueTuple
+ System.Runtime.CompilerServices.Unsafe=CLRNet.Facade.System.Runtime
+ System.Runtime.CompilerServices.AsyncValueTaskMethodBuilder=CLRNet.Facade.System.Runtime
+ System.Runtime.CompilerServices.AsyncValueTaskMethodBuilder`1=CLRNet.Facade.System.Runtime
+
+# Async infrastructure
+ System.Threading.Tasks.ValueTask=CLRNet.Facade.System.Threading.Tasks.Extensions
+ System.Collections.Generic.IAsyncEnumerable=CLRNet.Facade.System.Threading.Tasks.Extensions
+ System.Collections.Generic.IAsyncEnumerator=CLRNet.Facade.System.Threading.Tasks.Extensions
+
+# Buffer helpers
+ System.Buffers.ArrayPool=CLRNet.Facade.System.Buffers
+
+# JSON subset
+ System.Text.Json.JsonSerializer=CLRNet.Facade.System.Text.Json
+ System.Text.Json.JsonSerializerOptions=CLRNet.Facade.System.Text.Json
+ System.Text.Json.Utf8JsonWriter=CLRNet.Facade.System.Text.Json
+ System.Text.Json.Utf8JsonReader=CLRNet.Facade.System.Text.Json
+
+# App integration helpers
+ System.Net.Http.SafeHttpClientHandler=CLRNet.Facade.System.Net.Http
+ System.IO.WinRtStorageExtensions=CLRNet.Facade.System.IO
