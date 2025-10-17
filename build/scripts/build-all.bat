@@ -23,6 +23,9 @@ if not defined VCINSTALLDIR (
     exit /b 1
 )
 
+:: Ensure the ARM cross-compilation environment is active
+call :EnsureArmToolchain
+
 :: Check for Windows Phone SDK
 if not exist "%ProgramFiles(x86)%\Microsoft SDKs\WindowsPhoneApp\v8.1" (
     echo [ERROR] Windows Phone 8.1 SDK not found
@@ -68,7 +71,7 @@ if errorlevel 1 (
 echo [OK] CLRNetCore.dll built successfully
 
 echo [BUILD] CLRNetHost.exe - Runtime host executable  
-cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_CONSOLE ^
+cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_CONSOLE /DUNICODE /D_UNICODE ^
    /I"%SOLUTION_DIR%\src" /I"%SOLUTION_DIR%\include" ^
    /Fo"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\\" ^
    /Fd"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\CLRNetHost.pdb" ^
@@ -95,7 +98,7 @@ call :CollectSources INTEROP_SOURCES ^
    "%SOLUTION_DIR%\src\interop\hardware\*.cpp"
 
 echo [BUILD] CLRNetInterop.dll - System interop layer
-cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DCLRNET_INTEROP_EXPORTS ^
+cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DCLRNET_INTEROP_EXPORTS /DUNICODE /D_UNICODE ^
    /I"%SOLUTION_DIR%\src" /I"%SOLUTION_DIR%\include" ^
    /Fo"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\\" ^
    /Fd"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\CLRNetInterop.pdb" ^
@@ -121,7 +124,7 @@ call :CollectSources SYSTEM_SOURCES ^
    "%SOLUTION_DIR%\src\system\compatibility\*.cpp"
 
 echo [BUILD] CLRNetSystem.dll - System integration layer
-cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DCLRNET_SYSTEM_EXPORTS ^
+cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DCLRNET_SYSTEM_EXPORTS /DUNICODE /D_UNICODE ^
    /I"%SOLUTION_DIR%\src" /I"%SOLUTION_DIR%\include" ^
    /Fo"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\\" ^
    /Fd"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\CLRNetSystem.pdb" ^
@@ -147,7 +150,7 @@ call :CollectSources TEST_SOURCES ^
    "%SOLUTION_DIR%\tests\system\*.cpp"
 
 echo [BUILD] CLRNetTests.exe - Test suite runner
-cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_CONSOLE ^
+cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_CONSOLE /DUNICODE /D_UNICODE ^
    /I"%SOLUTION_DIR%\src" /I"%SOLUTION_DIR%\include" /I"%SOLUTION_DIR%\tests\include" ^
    /Fo"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\\" ^
    /Fd"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\CLRNetTests.pdb" ^
