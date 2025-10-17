@@ -1,4 +1,5 @@
 @echo off
+setlocal EnableDelayedExpansion
 echo ===============================================
 echo CLRNet Runtime - Complete Build Script
 echo ===============================================
@@ -42,12 +43,14 @@ echo ===============================================
 echo Phase 1: Building Core Runtime Components
 echo ===============================================
 
+call :CollectSources CORE_SOURCES "%SOLUTION_DIR%\src\phase1-userland\core\*.cpp"
+
 echo [BUILD] CLRNetCore.dll - Main runtime library
 cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DCLRNET_EXPORTS ^
    /I"%SOLUTION_DIR%\src" /I"%SOLUTION_DIR%\include" ^
    /Fo"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\\" ^
    /Fd"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\CLRNetCore.pdb" ^
-   "%SOLUTION_DIR%\src\phase1-userland\core\*.cpp" ^
+   %CORE_SOURCES% ^
    /link /OUT:"%BUILD_OUTPUT%\CLRNetCore.dll" /DLL /PDB:"%BUILD_OUTPUT%\CLRNetCore.pdb"
 
 if errorlevel 1 (
@@ -77,13 +80,18 @@ echo ===============================================
 echo Phase 2: Building Interop Components
 echo ===============================================
 
+call :CollectSources INTEROP_SOURCES ^
+   "%SOLUTION_DIR%\src\interop\*.cpp" ^
+   "%SOLUTION_DIR%\src\interop\winrt\*.cpp" ^
+   "%SOLUTION_DIR%\src\interop\pinvoke\*.cpp" ^
+   "%SOLUTION_DIR%\src\interop\hardware\*.cpp"
+
 echo [BUILD] CLRNetInterop.dll - System interop layer
 cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DCLRNET_INTEROP_EXPORTS ^
    /I"%SOLUTION_DIR%\src" /I"%SOLUTION_DIR%\include" ^
    /Fo"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\\" ^
    /Fd"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\CLRNetInterop.pdb" ^
-   "%SOLUTION_DIR%\src\interop\*.cpp" "%SOLUTION_DIR%\src\interop\winrt\*.cpp" ^
-   "%SOLUTION_DIR%\src\interop\pinvoke\*.cpp" "%SOLUTION_DIR%\src\interop\hardware\*.cpp" ^
+   %INTEROP_SOURCES% ^
    /link /OUT:"%BUILD_OUTPUT%\CLRNetInterop.dll" /DLL /PDB:"%BUILD_OUTPUT%\CLRNetInterop.pdb" ^
    "%BUILD_OUTPUT%\CLRNetCore.lib" windowsapp.lib
 
@@ -99,13 +107,17 @@ echo ===============================================
 echo Phase 3: Building System Integration Components
 echo ===============================================
 
+call :CollectSources SYSTEM_SOURCES ^
+   "%SOLUTION_DIR%\src\system\replacement\*.cpp" ^
+   "%SOLUTION_DIR%\src\system\hooks\*.cpp" ^
+   "%SOLUTION_DIR%\src\system\compatibility\*.cpp"
+
 echo [BUILD] CLRNetSystem.dll - System integration layer
 cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DCLRNET_SYSTEM_EXPORTS ^
    /I"%SOLUTION_DIR%\src" /I"%SOLUTION_DIR%\include" ^
    /Fo"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\\" ^
    /Fd"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\CLRNetSystem.pdb" ^
-   "%SOLUTION_DIR%\src\system\replacement\*.cpp" "%SOLUTION_DIR%\src\system\hooks\*.cpp" ^
-   "%SOLUTION_DIR%\src\system\compatibility\*.cpp" ^
+   %SYSTEM_SOURCES% ^
    /link /OUT:"%BUILD_OUTPUT%\CLRNetSystem.dll" /DLL /PDB:"%BUILD_OUTPUT%\CLRNetSystem.pdb" ^
    "%BUILD_OUTPUT%\CLRNetCore.lib" "%BUILD_OUTPUT%\CLRNetInterop.lib" ntdll.lib psapi.lib
 
@@ -121,12 +133,17 @@ echo ===============================================
 echo Building Test Suite
 echo ===============================================
 
+call :CollectSources TEST_SOURCES ^
+   "%SOLUTION_DIR%\tests\core\*.cpp" ^
+   "%SOLUTION_DIR%\tests\interop\*.cpp" ^
+   "%SOLUTION_DIR%\tests\system\*.cpp"
+
 echo [BUILD] CLRNetTests.exe - Test suite runner
 cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_CONSOLE ^
    /I"%SOLUTION_DIR%\src" /I"%SOLUTION_DIR%\include" /I"%SOLUTION_DIR%\tests\include" ^
    /Fo"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\\" ^
    /Fd"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\CLRNetTests.pdb" ^
-   "%SOLUTION_DIR%\tests\core\*.cpp" "%SOLUTION_DIR%\tests\interop\*.cpp" "%SOLUTION_DIR%\tests\system\*.cpp" ^
+   %TEST_SOURCES% ^
    /link /OUT:"%BUILD_OUTPUT%\CLRNetTests.exe" /PDB:"%BUILD_OUTPUT%\CLRNetTests.pdb" ^
    "%BUILD_OUTPUT%\CLRNetCore.lib" "%BUILD_OUTPUT%\CLRNetInterop.lib" "%BUILD_OUTPUT%\CLRNetSystem.lib"
 
@@ -143,6 +160,23 @@ echo Creating Deployment Packages
 echo ===============================================
 
 set PACKAGE_DIR=%BUILD_OUTPUT%\packages
+set OVERLAY_ROOT=%SOLUTION_DIR%\build\output\%BUILD_PLATFORM%-%BUILD_CONFIG%\CLRNetOverlay
+
+echo [PACK] CLRNet overlay facades
+powershell -NoProfile -ExecutionPolicy Bypass -File "%SOLUTION_DIR%\build\scripts\package-overlay.ps1" -Configuration %BUILD_CONFIG% -Platform %BUILD_PLATFORM%
+if errorlevel 1 (
+    echo [ERROR] Overlay packaging script failed
+    goto :error
+)
+
+if not exist "%OVERLAY_ROOT%" (
+    echo [ERROR] Overlay bundle was not generated at %OVERLAY_ROOT%
+    goto :error
+)
+
+if not exist "%PACKAGE_DIR%\CLRNet-Overlay" mkdir "%PACKAGE_DIR%\CLRNet-Overlay"
+xcopy "%OVERLAY_ROOT%" "%PACKAGE_DIR%\CLRNet-Overlay\" /E /I /Y >nul
+echo [OK] Overlay package created
 
 :: Core Runtime Package
 if not exist "%PACKAGE_DIR%\CLRNet-Runtime" mkdir "%PACKAGE_DIR%\CLRNet-Runtime"
@@ -201,17 +235,41 @@ echo   - CLRNetHost.exe     (Host executable)
 echo   - CLRNetInterop.dll  (Interop layer)
 echo   - CLRNetSystem.dll   (System integration)
 echo   - CLRNetTests.exe    (Test suite)
+echo   - CLRNetOverlay      (Track A facade bundle)
 echo.
 echo Deployment packages:
 echo   - CLRNet-Runtime     (Core components)
 echo   - CLRNet-Interop     (Interop components)
 echo   - CLRNet-System      (System components)
+echo   - CLRNet-Overlay     (Track A facades)
 echo   - CLRNet-Complete    (All components)
 echo.
 echo [SUCCESS] CLRNet Runtime build completed!
 echo Your modern .NET runtime binaries are ready for deployment.
 echo.
 goto :end
+
+:CollectSources
+setlocal EnableDelayedExpansion
+set OUTPUT_VAR=%~1
+shift
+set FILES=
+
+:collect_loop
+if "%~1"=="" goto collect_done
+if exist "%~1" (
+    for /f "delims=" %%I in ('dir /b /s "%~1" 2^>nul') do (
+        set FILES=!FILES! "%%~fI"
+    )
+) else (
+    echo [WARNING] No sources matched pattern %~1
+)
+shift
+goto collect_loop
+
+:collect_done
+endlocal & set "%OUTPUT_VAR%=%FILES%"
+goto :eof
 
 :error
 echo.

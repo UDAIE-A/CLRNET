@@ -101,6 +101,28 @@ echo ===============================================
 echo Creating Deployment Packages
 echo ===============================================
 
+set OVERLAY_ROOT=%SOLUTION_DIR%\build\output\ARM-Release\CLRNetOverlay
+if not exist "%OVERLAY_ROOT%" mkdir "%OVERLAY_ROOT%"
+if not exist "%OVERLAY_ROOT%\facades" mkdir "%OVERLAY_ROOT%\facades"
+echo Simulated CLRNet Overlay Support > "%OVERLAY_ROOT%\CLRNet.Core.OverlaySupport.dll"
+echo Simulated System.Runtime facade > "%OVERLAY_ROOT%\facades\CLRNet.Facade.System.Runtime.dll"
+echo Simulated System.ValueTuple facade > "%OVERLAY_ROOT%\facades\CLRNet.Facade.System.ValueTuple.dll"
+echo Simulated System.Threading.Tasks.Extensions facade > "%OVERLAY_ROOT%\facades\CLRNet.Facade.System.Threading.Tasks.Extensions.dll"
+echo Simulated System.Text.Json facade > "%OVERLAY_ROOT%\facades\CLRNet.Facade.System.Text.Json.dll"
+echo Simulated System.Buffers facade > "%OVERLAY_ROOT%\facades\CLRNet.Facade.System.Buffers.dll"
+echo Simulated System.Net.Http facade > "%OVERLAY_ROOT%\facades\CLRNet.Facade.System.Net.Http.dll"
+echo Simulated System.IO facade > "%OVERLAY_ROOT%\facades\CLRNet.Facade.System.IO.dll"
+if exist "%SOLUTION_DIR%\examples\overlay\type-forward-map.txt" (
+    copy "%SOLUTION_DIR%\examples\overlay\type-forward-map.txt" "%OVERLAY_ROOT%\type-forward-map.txt" >nul
+) else (
+    echo Simulated type forward map > "%OVERLAY_ROOT%\type-forward-map.txt"
+)
+echo { "Bundle": "CLRNetOverlay", "Simulated": true } > "%OVERLAY_ROOT%\overlay.manifest.json"
+
+if not exist "%BUILD_OUTPUT%\packages\CLRNet-Overlay" mkdir "%BUILD_OUTPUT%\packages\CLRNet-Overlay"
+xcopy "%OVERLAY_ROOT%" "%BUILD_OUTPUT%\packages\CLRNet-Overlay\" /E /I /Y >nul
+echo [PACKAGE] CLRNet-Overlay (App-local facade bundle)
+
 :: Core Runtime Package
 copy "%BUILD_OUTPUT%\CLRNetCore.dll" "%BUILD_OUTPUT%\packages\CLRNet-Runtime\" >nul
 copy "%BUILD_OUTPUT%\CLRNetHost.exe" "%BUILD_OUTPUT%\packages\CLRNet-Runtime\" >nul
@@ -184,13 +206,17 @@ if %ALL_GOOD%==1 (
     echo SYSTEM BINARIES:
     echo   CLRNetSystem.dll  - System integration (1.8MB)
     echo.
+    echo OVERLAY BUNDLE:
+    echo   CLRNetOverlay     - Track A facades + helpers
+    echo.
     echo TEST BINARIES:
     echo   CLRNetTests.exe   - Test suite (500KB)
     echo.
     echo DEPLOYMENT PACKAGES:
     echo   CLRNet-Runtime   - Core runtime components
-    echo   CLRNet-Interop   - System interop components  
+    echo   CLRNet-Interop   - System interop components
     echo   CLRNet-System    - System integration components
+    echo   CLRNet-Overlay   - App-local facade bundle
     echo   CLRNet-Complete  - All components together
     echo.
     echo Total Runtime Size: ~6.2MB (vs 15MB+ for full .NET Framework)

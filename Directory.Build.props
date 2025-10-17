@@ -1,0 +1,30 @@
+<Project>
+  <PropertyGroup>
+    <CLRNETRoot>$(MSBuildThisFileDirectory)</CLRNETRoot>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(CLRNET_EnableModernLangVersion)' != 'false'">
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <CLRNET_UseModernRoslyn Condition="'$(CLRNET_UseModernRoslyn)' == ''">true</CLRNET_UseModernRoslyn>
+    <CLRNET_AddOverlayFacades Condition="'$(CLRNET_AddOverlayFacades)' == ''">false</CLRNET_AddOverlayFacades>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(CLRNET_UseModernRoslyn)' == 'true' and '$(UsingMicrosoftNETSdk)' == 'true'">
+    <PackageReference Include="Microsoft.Net.Compilers.Toolset" Version="4.8.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(CLRNET_AddOverlayFacades)' == 'true'">
+    <ProjectReference Include="$(CLRNETRoot)src/overlays/CLRNet.Facade.System.Runtime/CLRNet.Facade.System.Runtime.csproj" />
+    <ProjectReference Include="$(CLRNETRoot)src/overlays/CLRNet.Facade.System.ValueTuple/CLRNet.Facade.System.ValueTuple.csproj" />
+    <ProjectReference Include="$(CLRNETRoot)src/overlays/CLRNet.Facade.System.Threading.Tasks.Extensions/CLRNet.Facade.System.Threading.Tasks.Extensions.csproj" />
+    <ProjectReference Include="$(CLRNETRoot)src/overlays/CLRNet.Facade.System.Text.Json/CLRNet.Facade.System.Text.Json.csproj" />
+    <ProjectReference Include="$(CLRNETRoot)src/overlays/CLRNet.Facade.System.Buffers/CLRNet.Facade.System.Buffers.csproj" />
+    <ProjectReference Include="$(CLRNETRoot)src/overlays/CLRNet.Facade.System.Net.Http/CLRNet.Facade.System.Net.Http.csproj" />
+    <ProjectReference Include="$(CLRNETRoot)src/overlays/CLRNet.Facade.System.IO/CLRNet.Facade.System.IO.csproj" />
+    <ProjectReference Include="$(CLRNETRoot)src/overlays/CLRNet.Core.OverlaySupport/CLRNet.Core.OverlaySupport.csproj" />
+  </ItemGroup>
+</Project>
