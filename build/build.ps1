@@ -184,6 +184,130 @@ function Build-Runtime {
     return $true
 }
 
+function Build-OverlayAssemblies {
+    param([string]$Configuration, [string]$Platform)
+
+    Write-BuildLog "Building overlay facade assemblies for $Platform/$Configuration..."
+
+    $overlayRoot = Join-Path $BuildRoot "..\src\overlays"
+    $overlayProjects = @(
+        "CLRNet.Core.OverlaySupport\\CLRNet.Core.OverlaySupport.csproj",
+        "CLRNet.Facade.System.Runtime\\CLRNet.Facade.System.Runtime.csproj",
+        "CLRNet.Facade.System.ValueTuple\\CLRNet.Facade.System.ValueTuple.csproj",
+        "CLRNet.Facade.System.Threading.Tasks.Extensions\\CLRNet.Facade.System.Threading.Tasks.Extensions.csproj",
+        "CLRNet.Facade.System.Text.Json\\CLRNet.Facade.System.Text.Json.csproj",
+        "CLRNet.Facade.System.Buffers\\CLRNet.Facade.System.Buffers.csproj",
+        "CLRNet.Facade.System.Net.Http\\CLRNet.Facade.System.Net.Http.csproj",
+        "CLRNet.Facade.System.IO\\CLRNet.Facade.System.IO.csproj"
+    )
+
+    foreach ($project in $overlayProjects) {
+        $projectPath = Join-Path $overlayRoot $project
+
+        if (!(Test-Path $projectPath)) {
+            Write-BuildLog "Overlay project not found: $projectPath" "ERROR"
+            return $false
+        }
+
+        Write-BuildLog "Invoking MSBuild for overlay: $project"
+
+        $arguments = @(
+            '"' + $projectPath + '"',
+            "/p:Configuration=$Configuration",
+            "/p:Platform=$Platform"
+        )
+
+        & $MSBuildPath @arguments
+
+        if ($LASTEXITCODE -ne 0) {
+            Write-BuildLog "Overlay build failed for $project" "ERROR"
+            return $false
+        }
+    }
+
+    Write-BuildLog "Overlay assemblies built successfully"
+    return $true
+}
+
+function Package-OverlayBundle {
+    param([string]$Configuration, [string]$Platform)
+
+    Write-BuildLog "Packaging CLRNET overlay bundle..."
+
+    $outputDir = Join-Path $OutputRoot "$Platform-$Configuration"
+    if (!(Test-Path $outputDir)) {
+        New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+    }
+
+    $overlayOutput = Join-Path $outputDir "CLRNetOverlay"
+    $facadeOutput = Join-Path $overlayOutput "facades"
+
+    if (Test-Path $overlayOutput) {
+        Remove-Item -Recurse -Force $overlayOutput
+    }
+
+    New-Item -ItemType Directory -Path $facadeOutput -Force | Out-Null
+
+    $overlaySourceRoot = Join-Path $BuildRoot "..\src\overlays"
+
+    $overlayArtifacts = @(
+        @{ Source = "CLRNet.Core.OverlaySupport\\bin\\$Platform\\$Configuration\\CLRNet.Core.OverlaySupport.dll"; Destination = $overlayOutput },
+        @{ Source = "CLRNet.Core.OverlaySupport\\bin\\$Platform\\$Configuration\\CLRNet.Core.OverlaySupport.pdb"; Destination = $overlayOutput; Optional = $true },
+        @{ Source = "CLRNet.Facade.System.Runtime\\bin\\$Platform\\$Configuration\\CLRNet.Facade.System.Runtime.dll"; Destination = $facadeOutput },
+        @{ Source = "CLRNet.Facade.System.Runtime\\bin\\$Platform\\$Configuration\\CLRNet.Facade.System.Runtime.pdb"; Destination = $facadeOutput; Optional = $true },
+        @{ Source = "CLRNet.Facade.System.ValueTuple\\bin\\$Platform\\$Configuration\\CLRNet.Facade.System.ValueTuple.dll"; Destination = $facadeOutput },
+        @{ Source = "CLRNet.Facade.System.Threading.Tasks.Extensions\\bin\\$Platform\\$Configuration\\CLRNet.Facade.System.Threading.Tasks.Extensions.dll"; Destination = $facadeOutput },
+        @{ Source = "CLRNet.Facade.System.Text.Json\\bin\\$Platform\\$Configuration\\CLRNet.Facade.System.Text.Json.dll"; Destination = $facadeOutput },
+        @{ Source = "CLRNet.Facade.System.Buffers\\bin\\$Platform\\$Configuration\\CLRNet.Facade.System.Buffers.dll"; Destination = $facadeOutput },
+        @{ Source = "CLRNet.Facade.System.Net.Http\\bin\\$Platform\\$Configuration\\CLRNet.Facade.System.Net.Http.dll"; Destination = $facadeOutput },
+        @{ Source = "CLRNet.Facade.System.IO\\bin\\$Platform\\$Configuration\\CLRNet.Facade.System.IO.dll"; Destination = $facadeOutput }
+    )
+
+    foreach ($artifact in $overlayArtifacts) {
+        $sourcePath = Join-Path $overlaySourceRoot $artifact.Source
+
+        if (!(Test-Path $sourcePath)) {
+            if ($artifact.Optional) {
+                Write-BuildLog "Optional overlay artifact missing (skipping): $sourcePath" "WARNING"
+                continue
+            }
+
+            Write-BuildLog "Required overlay artifact missing: $sourcePath" "ERROR"
+            return $false
+        }
+
+        Copy-Item -Path $sourcePath -Destination $artifact.Destination -Force
+    }
+
+    $typeForwardMap = Join-Path $BuildRoot "..\examples\overlay\type-forward-map.txt"
+    if (Test-Path $typeForwardMap) {
+        Copy-Item -Path $typeForwardMap -Destination (Join-Path $overlayOutput "type-forward-map.txt") -Force
+    } else {
+        Write-BuildLog "Type forward map not found at $typeForwardMap" "WARNING"
+    }
+
+    $overlayManifest = [ordered]@{
+        Bundle = "CLRNetOverlay"
+        GeneratedOn = (Get-Date).ToString("yyyy-MM-ddTHH:mm:ssZ")
+        Configuration = $Configuration
+        Platform = $Platform
+        Facades = @(
+            "System.Runtime",
+            "System.ValueTuple",
+            "System.Threading.Tasks.Extensions",
+            "System.Text.Json",
+            "System.Buffers",
+            "System.Net.Http",
+            "System.IO"
+        )
+    }
+
+    $overlayManifest | ConvertTo-Json -Depth 3 | Out-File -FilePath (Join-Path $overlayOutput "overlay.manifest.json") -Encoding UTF8
+
+    Write-BuildLog "Overlay bundle packaged at $overlayOutput"
+    return $true
+}
+
 function Build-TestApp {
     param([string]$Platform, [string]$Configuration)
     
@@ -298,22 +422,44 @@ function Invoke-MainBuild {
                 Write-BuildLog "Runtime build failed" "ERROR"
                 exit 1
             }
-            
+
             if (!(Build-TestApp $Platform $Configuration)) {
-                Write-BuildLog "Test app build failed" "ERROR" 
+                Write-BuildLog "Test app build failed" "ERROR"
                 exit 1
             }
-            
+
+            if (!(Build-OverlayAssemblies $Configuration $Platform)) {
+                Write-BuildLog "Overlay assembly build failed" "ERROR"
+                exit 1
+            }
+
+            if (!(Package-OverlayBundle $Configuration $Platform)) {
+                Write-BuildLog "Overlay packaging failed" "ERROR"
+                exit 1
+            }
+
             Write-BuildLog "Build completed successfully"
         }
-        
+
         "package" {
             if (!(New-DeploymentPackage $Platform $Configuration)) {
                 Write-BuildLog "Package creation failed" "ERROR"
                 exit 1
             }
         }
-        
+
+        "packageoverlay" {
+            if (!(Build-OverlayAssemblies $Configuration $Platform)) {
+                Write-BuildLog "Overlay assembly build failed" "ERROR"
+                exit 1
+            }
+
+            if (!(Package-OverlayBundle $Configuration $Platform)) {
+                Write-BuildLog "Overlay packaging failed" "ERROR"
+                exit 1
+            }
+        }
+
         "deploy" {
             if (!$Device) {
                 Write-BuildLog "Device name required for deployment" "ERROR"
@@ -328,7 +474,7 @@ function Invoke-MainBuild {
         
         default {
             Write-BuildLog "Unknown target: $Target" "ERROR"
-            Write-BuildLog "Valid targets: ValidateEnvironment, Clean, Build, Package, Deploy"
+            Write-BuildLog "Valid targets: ValidateEnvironment, Clean, Build, Package, PackageOverlay, Deploy"
             exit 1
         }
     }

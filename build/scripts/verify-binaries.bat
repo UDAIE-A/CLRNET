@@ -19,9 +19,11 @@ if not exist "%BUILD_DIR%" (
 
 :: Define expected binaries
 set CORE_BINARIES=CLRNetCore.dll CLRNetHost.exe
-set INTEROP_BINARIES=CLRNetInterop.dll  
+set INTEROP_BINARIES=CLRNetInterop.dll
 set SYSTEM_BINARIES=CLRNetSystem.dll
 set TEST_BINARIES=CLRNetTests.exe
+set OVERLAY_DIR=%~dp0..\output\ARM-Release\CLRNetOverlay
+set OVERLAY_FACADES=CLRNet.Facade.System.Runtime.dll CLRNet.Facade.System.ValueTuple.dll CLRNet.Facade.System.Threading.Tasks.Extensions.dll CLRNet.Facade.System.Text.Json.dll CLRNet.Facade.System.Buffers.dll CLRNet.Facade.System.Net.Http.dll CLRNet.Facade.System.IO.dll
 
 echo ===============================================
 echo Verifying Core Runtime Binaries
@@ -102,6 +104,50 @@ for %%f in (%TEST_BINARIES%) do (
     )
     echo.
 )
+
+echo ===============================================
+echo Verifying Overlay Bundle
+echo ===============================================
+
+if exist "%OVERLAY_DIR%" (
+    if exist "%OVERLAY_DIR%\CLRNet.Core.OverlaySupport.dll" (
+        echo [OK] CLRNet.Core.OverlaySupport.dll
+    ) else (
+        echo [ERROR] Missing overlay support assembly
+        set HAS_ERRORS=1
+    )
+
+    if exist "%OVERLAY_DIR%\type-forward-map.txt" (
+        echo [OK] type-forward-map.txt present
+    ) else (
+        echo [ERROR] Overlay type-forward-map.txt missing
+        set HAS_ERRORS=1
+    )
+
+    if exist "%OVERLAY_DIR%\overlay.manifest.json" (
+        echo [OK] overlay.manifest.json present
+    ) else (
+        echo [WARNING] overlay.manifest.json missing (optional)
+    )
+
+    if exist "%OVERLAY_DIR%\facades" (
+        for %%f in (%OVERLAY_FACADES%) do (
+            if exist "%OVERLAY_DIR%\facades\%%f" (
+                echo [OK] Facade: %%f
+            ) else (
+                echo [ERROR] Missing facade: %%f
+                set HAS_ERRORS=1
+            )
+        )
+    ) else (
+        echo [ERROR] Overlay facades directory missing
+        set HAS_ERRORS=1
+    )
+) else (
+    echo [ERROR] Overlay directory missing: %OVERLAY_DIR%
+    set HAS_ERRORS=1
+)
+echo.
 
 echo ===============================================
 echo Verifying Deployment Packages

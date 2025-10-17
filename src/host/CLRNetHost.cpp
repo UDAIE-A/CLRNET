@@ -185,7 +185,7 @@ int InitializeRuntime()
         // Initialize Core Execution Engine
         wcout << L"[INIT] Core Execution Engine..." << endl;
         g_executionEngine = make_unique<CoreExecutionEngine>();
-        if (FAILED(g_executionEngine->Initialize())) {
+        if (!g_executionEngine->Initialize()) {
             wcout << L"[ERROR] Failed to initialize Core Execution Engine" << endl;
             return 1;
         }
@@ -193,7 +193,7 @@ int InitializeRuntime()
         // Initialize Type System
         wcout << L"[INIT] Type System..." << endl;
         g_typeSystem = make_unique<TypeSystem>();
-        if (FAILED(g_typeSystem->Initialize())) {
+        if (!g_typeSystem->Initialize()) {
             wcout << L"[ERROR] Failed to initialize Type System" << endl;
             return 1;
         }
@@ -201,23 +201,25 @@ int InitializeRuntime()
         // Initialize Garbage Collector
         wcout << L"[INIT] Garbage Collector..." << endl;
         g_garbageCollector = make_unique<GarbageCollector>();
-        if (FAILED(g_garbageCollector->Initialize())) {
+        if (!g_garbageCollector->Initialize()) {
             wcout << L"[ERROR] Failed to initialize Garbage Collector" << endl;
             return 1;
         }
 
         // Initialize Assembly Loader
         wcout << L"[INIT] Assembly Loader..." << endl;
-        g_assemblyLoader = make_unique<AssemblyLoader>();
-        if (FAILED(g_assemblyLoader->Initialize())) {
+        g_assemblyLoader = make_unique<AssemblyLoader>(g_typeSystem.get());
+        if (!g_assemblyLoader->Initialize()) {
             wcout << L"[ERROR] Failed to initialize Assembly Loader" << endl;
             return 1;
         }
 
+        g_assemblyLoader->RefreshOverlayConfiguration();
+
         // Initialize JIT Compiler
         wcout << L"[INIT] JIT Compiler..." << endl;
         g_jitCompiler = make_unique<SimpleJIT>();
-        if (FAILED(g_jitCompiler->Initialize())) {
+        if (!g_jitCompiler->Initialize()) {
             wcout << L"[ERROR] Failed to initialize JIT Compiler" << endl;
             return 1;
         }
