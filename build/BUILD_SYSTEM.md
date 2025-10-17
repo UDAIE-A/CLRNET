@@ -6,27 +6,29 @@ This build system compiles the CLRNet runtime components into executable binarie
 ## Build Targets
 
 ### Core Runtime Binaries
-- **CLRNetCore.dll** - Main runtime library
+- **CLRNetCore.dll** - Main runtime library (execution engine)
 - **CLRNetHost.exe** - Runtime host executable
-- **CLRNetJIT.dll** - JIT compilation engine
-- **CLRNetGC.dll** - Garbage collector module
 
-### Interop Binaries  
-- **CLRNetInterop.dll** - System interop layer
-- **CLRNetWinRT.dll** - Windows Runtime bridge
-- **CLRNetHardware.dll** - Hardware access module
-- **CLRNetSecurity.dll** - Security enforcement module
+### Interop Binaries
+- **CLRNetInterop.dll** - System interop layer for WinRT, P/Invoke, and hardware services
 
 ### System Integration Binaries
-- **CLRNetReplacer.exe** - CLR replacement engine
-- **CLRNetHooks.dll** - System hooks library
-- **CLRNetCompat.dll** - Compatibility shim layer
-- **CLRNetSafety.dll** - Safety and rollback system
+- **CLRNetSystem.dll** - System integration shim for runtime replacement
 
 ### Test and Demo Binaries
-- **CLRNetTests.exe** - Test suite runner
-- **CLRNetDemo.exe** - Runtime demonstration app
-- **CLRNetBench.exe** - Performance benchmarking tool
+- **CLRNetTests.exe** - Test suite runner (smoke test harness)
+
+### Track A Overlay Bundle
+- **CLRNet.Core.OverlaySupport.dll** - Shared helpers (ValueTask, async streams, JSON, HTTP wrappers)
+- **CLRNet.Facade.System.Runtime.dll** - Type forwards to modern `System.Runtime`
+- **CLRNet.Facade.System.ValueTuple.dll**
+- **CLRNet.Facade.System.Threading.Tasks.Extensions.dll**
+- **CLRNet.Facade.System.Text.Json.dll**
+- **CLRNet.Facade.System.Buffers.dll**
+- **CLRNet.Facade.System.Net.Http.dll**
+- **CLRNet.Facade.System.IO.dll**
+- **type-forward-map.txt** - Loader manifest that maps modern namespaces to the overlay assemblies
+- **overlay.manifest.json** - Build metadata for diagnostics
 
 ## Build Configuration
 
@@ -52,17 +54,14 @@ This build system compiles the CLRNet runtime components into executable binarie
 
 ### Quick Build
 ```batch
-# Build all binaries (Release configuration)
+# Build native runtime + overlay bundle (Release/ARM)
 build\scripts\build-all.bat
 
-# Build specific configuration
-build\scripts\build-debug.bat
-build\scripts\build-release.bat
+# Overlay-only refresh (after editing facades)
+powershell -ExecutionPolicy Bypass -File build\scripts\package-overlay.ps1 -Configuration Release -Platform ARM
 
-# Build individual components
-build\scripts\build-core.bat
-build\scripts\build-interop.bat
-build\scripts\build-system.bat
+# Validate binaries + overlay payload
+build\scripts\verify-binaries.bat
 ```
 
 ### Manual Build Process
@@ -77,72 +76,53 @@ After successful build:
 ```
 build\
 ├── bin\
-│   ├── ARM\
-│   │   ├── Debug\          # Debug binaries
-│   │   │   ├── CLRNetCore.dll
-│   │   │   ├── CLRNetHost.exe
-│   │   │   ├── CLRNetJIT.dll
-│   │   │   └── ...
-│   │   └── Release\        # Release binaries  
-│   │       ├── CLRNetCore.dll
-│   │       ├── CLRNetHost.exe
-│   │       ├── CLRNetJIT.dll
-│   │       └── ...
-│   └── x86\               # x86 binaries (for testing)
-├── lib\                   # Static libraries
-├── obj\                   # Intermediate build files
-└── packages\              # Deployment packages
+│   └── ARM\
+│       └── Release\
+│           ├── CLRNetCore.dll
+│           ├── CLRNetHost.exe
+│           ├── CLRNetInterop.dll
+│           ├── CLRNetSystem.dll
+│           ├── CLRNetTests.exe
+│           └── packages\
+│               ├── CLRNet-Runtime\
+│               ├── CLRNet-Interop\
+│               ├── CLRNet-System\
+│               ├── CLRNet-Complete\
+│               └── CLRNet-Overlay\
+├── output\
+│   └── ARM-Release\
+│       └── CLRNetOverlay\
+│           ├── CLRNet.Core.OverlaySupport.dll
+│           ├── facades\
+│           ├── overlay.manifest.json
+│           └── type-forward-map.txt
+├── logs\
+└── scripts\
 ```
 
 ## Deployment Packages
 
 ### Runtime Package (CLRNet-Runtime.zip)
-Contains core runtime binaries needed to execute .NET applications:
-- CLRNetCore.dll
-- CLRNetHost.exe  
-- CLRNetJIT.dll
-- CLRNetGC.dll
-- Configuration files
-- Installation script
+Core runtime binaries: `CLRNetCore.dll`, `CLRNetHost.exe`, and supporting PDBs.
 
 ### Interop Package (CLRNet-Interop.zip)
-Contains system integration components:
-- CLRNetInterop.dll
-- CLRNetWinRT.dll
-- CLRNetHardware.dll
-- CLRNetSecurity.dll
-- API documentation
-- Sample applications
+Interop layer (`CLRNetInterop.dll`) bundled for device access.
 
-### System Package (CLRNet-System.zip)  
-Contains advanced system integration tools:
-- CLRNetReplacer.exe
-- CLRNetHooks.dll
-- CLRNetCompat.dll
-- CLRNetSafety.dll
-- Safety configuration
-- Rollback tools
+### System Package (CLRNet-System.zip)
+System integration shim (`CLRNetSystem.dll`).
+
+### Overlay Package (CLRNet-Overlay.zip / folder)
+Contains the Track A facade bundle generated from `src/overlays/*` plus the type-forward map and manifest.
 
 ### Complete Package (CLRNet-Complete.zip)
-Contains everything needed for full deployment:
-- All runtime binaries
-- All interop components
-- All system integration tools
-- Documentation and samples
-- Installation and configuration tools
+All runtime binaries together with overlay payload for one-stop distribution.
 
 ## Binary Verification
 
 ### Automatic Verification
 ```batch
-# Verify all binaries are built correctly
+# Verify binaries and overlay payload
 build\scripts\verify-binaries.bat
-
-# Test binary functionality  
-build\scripts\test-binaries.bat
-
-# Check binary signatures and integrity
-build\scripts\check-integrity.bat
 ```
 
 ### Manual Verification
@@ -155,11 +135,13 @@ build\scripts\check-integrity.bat
 ## Performance Expectations
 
 ### Binary Sizes (Release configuration)
-- CLRNetCore.dll: ~2.5MB (main runtime)
-- CLRNetHost.exe: ~150KB (host executable)
-- CLRNetJIT.dll: ~800KB (JIT compiler)
-- CLRNetGC.dll: ~600KB (garbage collector)
-- Total Runtime: ~4MB (vs 15MB+ for full .NET Framework)
+- CLRNetCore.dll: ~2.5 MB (main runtime)
+- CLRNetHost.exe: ~150 KB (host executable)
+- CLRNetInterop.dll: ~1.2 MB (interop surface)
+- CLRNetSystem.dll: ~1.8 MB (system integration shim)
+- CLRNet.Core.OverlaySupport.dll: ~400 KB (Track A helpers)
+- Facade DLLs: 80–150 KB each (ValueTuple, Tasks.Extensions, Text.Json, Buffers, Net.Http, IO)
+- Total Runtime + Overlay: ~6 MB (vs 15 MB+ for full .NET Framework)
 
 ### Runtime Performance  
 - Startup time: <200ms (vs 500ms+ for legacy CLR)

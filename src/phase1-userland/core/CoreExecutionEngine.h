@@ -12,6 +12,8 @@
 #include <vector>
 #include <unordered_map>
 
+#include "RuntimeTypes.h"
+
 namespace CLRNet {
 namespace Phase1 {
 
@@ -21,22 +23,6 @@ class MethodTable;
 class GarbageCollector;
 class AssemblyLoader;
 class SimpleJIT;
-
-// Basic object header for managed objects
-struct ObjectHeader {
-    MethodTable* methodTable;
-    DWORD syncBlock;
-};
-
-// Method descriptor for executable methods
-struct MethodDesc {
-    DWORD flags;
-    WORD slotNumber;
-    WORD tokenRemainder; 
-    void* nativeCode;
-    void* ilCode;
-    DWORD ilCodeSize;
-};
 
 // Core execution engine class
 class CoreExecutionEngine {
