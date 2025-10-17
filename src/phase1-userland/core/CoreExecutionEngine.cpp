@@ -4,6 +4,7 @@
 #include "AssemblyLoader.h"
 #include "SimpleJIT.h"
 #include <iostream>
+#include <cstring> // Added for memcpy
 
 namespace CLRNet {
 namespace Phase1 {
@@ -277,4 +278,6 @@ __declspec(dllexport) int ExecuteManagedMethod(const char* typeName, const char*
     }
 
     return CLRNet::Phase1::g_runtime->ExecuteMethod(methodPtr, nullptr, 0);
+}
+
 }

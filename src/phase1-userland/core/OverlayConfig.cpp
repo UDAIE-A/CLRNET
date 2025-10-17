@@ -7,6 +7,8 @@
 #include <cstdio>
 #include <locale>
 #include <cstdlib>
+#include <cstring> // For portable string comparison
+#include <cstring> // For memcpy
 
 #include <windows.h>
 
@@ -35,8 +37,8 @@ void OverlayConfig::Merge(const OverlayConfig& other) {
         std::replace(normalized.begin(), normalized.end(), L'/', L'\\');
 
         auto duplicate = std::find_if(searchPaths.begin(), searchPaths.end(), [&](const std::wstring& existing) {
-            return _wcsicmp(existing.c_str(), normalized.c_str()) == 0;
-        });
+            return wcscmp(existing.c_str(), normalized.c_str()) == 0; // Corrected case-insensitive comparison
+        }); // Fixed syntax
 
         if (duplicate == searchPaths.end()) {
             searchPaths.push_back(normalized);
@@ -68,7 +70,7 @@ OverlayConfig OverlayConfigLoader::LoadFromEnvironment() {
     std::wstring enabledValue = EnvironmentString(L"CLRNET_OVERLAY_ENABLE");
     if (!enabledValue.empty()) {
         std::wstring lowered = enabledValue;
-        std::transform(lowered.begin(), lowered.end(), lowered.begin(), ::towlower);
+        std::transform(lowered.begin(), lowered.end(), lowered.begin(), [](wchar_t c) { return ::towlower(c); });
         config.enabled = (lowered == L"1" || lowered == L"true" || lowered == L"yes");
     }
 
@@ -270,12 +272,16 @@ std::wstring OverlayConfigLoader::EnvironmentString(const wchar_t* name) {
         return L"";
     }
 
-    wchar_t* value = _wgetenv(name);
+    wchar_t* value = nullptr;
+    size_t len = 0;
+    _wdupenv_s(&value, &len, name);
     if (!value) {
         return L"";
     }
 
-    return value;
+    std::wstring result(value);
+    free(value);
+    return result;
 }
 
 std::wstring Utf8ToWide(const std::string& value) {
@@ -289,7 +295,7 @@ std::wstring Utf8ToWide(const std::string& value) {
     }
 
     std::wstring wide(static_cast<size_t>(requiredLength), L'\0');
-    MultiByteToWideChar(CP_UTF8, 0, value.c_str(), static_cast<int>(value.size()), wide.data(), requiredLength);
+    MultiByteToWideChar(CP_UTF8, 0, value.c_str(), static_cast<int>(value.size()), &wide[0], requiredLength);
     return wide;
 }
 
@@ -304,7 +310,7 @@ std::string WideToUtf8(const std::wstring& value) {
     }
 
     std::string narrow(static_cast<size_t>(requiredLength), '\0');
-    WideCharToMultiByte(CP_UTF8, 0, value.c_str(), static_cast<int>(value.size()), narrow.data(), requiredLength, nullptr, nullptr);
+    WideCharToMultiByte(CP_UTF8, 0, value.c_str(), static_cast<int>(value.size()), &narrow[0], requiredLength, nullptr, nullptr);
     return narrow;
 }
 

@@ -1,4 +1,6 @@
 @echo off
+call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsDevCmd.bat"
+
 setlocal EnableDelayedExpansion
 echo ===============================================
 echo CLRNet Runtime - Complete Build Script
@@ -6,7 +8,8 @@ echo ===============================================
 echo.
 
 :: Set environment variables
-set SOLUTION_DIR=%~dp0..
+set SOLUTION_DIR=%~dp0\..\..
+echo [DEBUG] SOLUTION_DIR resolved to: %SOLUTION_DIR%
 set BUILD_CONFIG=Release
 set BUILD_PLATFORM=ARM
 set BUILD_OUTPUT=%SOLUTION_DIR%\build\bin\%BUILD_PLATFORM%\%BUILD_CONFIG%
@@ -15,7 +18,7 @@ set BUILD_OUTPUT=%SOLUTION_DIR%\build\bin\%BUILD_PLATFORM%\%BUILD_CONFIG%
 if not defined VCINSTALLDIR (
     echo [ERROR] Visual Studio environment not detected
     echo Please run from Visual Studio Developer Command Prompt
-    echo Or run: "C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\Tools\VsDevCmd.bat"
+    echo Or run: "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsDevCmd.bat"
     pause
     exit /b 1
 )
@@ -49,10 +52,12 @@ echo ===============================================
 call :CollectSources CORE_SOURCES "%SOLUTION_DIR%\src\phase1-userland\core\*.cpp"
 
 echo [BUILD] CLRNetCore.dll - Main runtime library
+:: Add /arch:AVX2 and /EHsc flags to enable AVX2 instructions and exception handling
 cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DCLRNET_EXPORTS ^
    /I"%SOLUTION_DIR%\src" /I"%SOLUTION_DIR%\include" ^
    /Fo"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\\" ^
    /Fd"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\CLRNetCore.pdb" ^
+   /arch:AVX2 /EHsc ^
    %CORE_SOURCES% ^
    /link /OUT:"%BUILD_OUTPUT%\CLRNetCore.dll" /DLL /PDB:"%BUILD_OUTPUT%\CLRNetCore.pdb"
 
@@ -260,18 +265,38 @@ set FILES=
 
 :collect_loop
 if "%~1"=="" goto collect_done
+set DIR_PATH=%~dp1
+if not exist "%DIR_PATH%" (
+    echo [ERROR] Directory does not exist: %DIR_PATH%
+    endlocal & exit /b 1
+)
 if exist "%~1" (
+    echo [DEBUG] Collecting files matching pattern: %~1
+    echo [DEBUG] Resolved path: %~dp1
     for /f "delims=" %%I in ('dir /b /s "%~1" 2^>nul') do (
+        echo [DEBUG] Found file: %%~fI
         set FILES=!FILES! "%%~fI"
     )
 ) else (
     echo [WARNING] No sources matched pattern %~1
+    echo [DEBUG] Checked path: %~1
 )
 shift
 goto collect_loop
 
 :collect_done
+if "!FILES!"=="" (
+    echo [ERROR] No source files were collected. Please check the paths and patterns.
+    endlocal & exit /b 1
+)
 endlocal & set "%OUTPUT_VAR%=%FILES%"
+goto :eof
+
+:ConfigureWp81Sdk
+rem Configure Windows Phone 8.1 SDK paths
+set INCLUDE=%1\Include;%INCLUDE%
+set LIB=%1\Lib;%LIB%
+set PATH=%1\Bin;%PATH%
 goto :eof
 
 :error

@@ -2,7 +2,7 @@
 #include <cassert>
 #include <algorithm>
 #include <functional>
-#include <cstring>
+#include <cstring> // For memcpy
 
 namespace CLRNet {
 namespace Phase1 {
