@@ -87,49 +87,30 @@ Need to brief stakeholders quickly? Share the [CLRNET vs. Windows Phone 8.1 over
 
 ### Quick Verification (30 seconds)
 ```powershell
-# Verify everything is working
+# Quick health check (30 seconds)
 .\scripts\simple-check.ps1
 
-# Run comprehensive tests  
+# Full regression suite
 .\scripts\run-all-tests.ps1
 
-# Check detailed status
+# Inspect detailed status & phase reports
 Get-Content docs\RUNTIME_STATUS.md
+Get-Content docs\PHASE1-STATUS.md
 ```
 
-### Deployment to Windows Phone 8.1
-1. **Build Runtime:** Use Visual Studio ARM cross-compilation
-2. **Deploy Components:** Install runtime components via side-loading  
-3. **Test Applications:** Run .NET applications with modern performance
-4. **Monitor System:** Use built-in health monitoring and safety systems
-5. **Advanced Features:** Optionally enable system-wide CLR replacement
+For runtime overlays, enable verbose logging via `OverlayConfig` to confirm which assemblies are resolved from the app package versus the OS.
 
-## Technical Requirements
+---
 
-- **Target Platform:** Windows Phone 8.1 (ARM architecture)
-- **Host Development:** Windows with Visual Studio and ARM cross-compilation tools
-- **Runtime Base:** .NET Core or Mono runtime adapted for WP8.1
-- **Deployment:** Side-loading capabilities for unsigned applications
+## Further Reading
+* [CLRNET Application Integration Playbook](docs/CLRNET_APP_INTEGRATION_PLAYBOOK.md)
+* [App-Local Overlay Guide](docs/APP_LOCAL_OVERLAY_GUIDE.md)
+* [Userspace IL Engine Roadmap](docs/TRACK-B-USERSPACE-IL-ENGINE.md)
+* [Modern C# Pipeline Roadmap](docs/TRACK-C-MODERN-CS-PIPELINE.md)
+* [Stakeholder Overview](docs/CLRNET_VS_WP81_OVERVIEW.md)
+* [Deployment scripts](scripts/)
 
-## Safety Considerations
-
-- All development starts in userland to avoid bricking devices
-- Thorough testing in emulators before device deployment
-- Backup and restore procedures for system modifications
-- Rollback mechanisms for Phase 3 integration attempts
-
-## Contributing
-
-This is an experimental research project. Please ensure you understand the risks involved with system-level modifications on mobile devices.
+---
 
 ## License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
-### Why MIT License?
-- ✅ **Maximum Compatibility** with Microsoft .NET ecosystem
-- ✅ **Commercial-Friendly** for enterprise adoption
-- ✅ **Patent Protection** with implicit patent grants
-- ✅ **Industry Standard** used by major .NET projects
-
-The MIT License enables both open-source contributions and commercial derivatives while maintaining compatibility with Microsoft's .NET licensing terms.
+This project is licensed under the [MIT License](LICENSE).
