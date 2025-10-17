@@ -19,7 +19,7 @@ namespace Phase1 {
 
 // Forward declarations
 class TypeSystem;
-class MethodTable;
+struct MethodTable; // Changed from class to struct
 class GarbageCollector;
 class AssemblyLoader;
 class SimpleJIT;

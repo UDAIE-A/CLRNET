@@ -1,4 +1,6 @@
 @echo off
+call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsDevCmd.bat"
+
 setlocal EnableDelayedExpansion
 echo ===============================================
 echo CLRNet Runtime - Complete Build Script
@@ -6,7 +8,8 @@ echo ===============================================
 echo.
 
 :: Set environment variables
-set SOLUTION_DIR=%~dp0..
+set SOLUTION_DIR=%~dp0\..\..
+echo [DEBUG] SOLUTION_DIR resolved to: %SOLUTION_DIR%
 set BUILD_CONFIG=Release
 set BUILD_PLATFORM=ARM
 set BUILD_OUTPUT=%SOLUTION_DIR%\build\bin\%BUILD_PLATFORM%\%BUILD_CONFIG%
@@ -15,7 +18,7 @@ set BUILD_OUTPUT=%SOLUTION_DIR%\build\bin\%BUILD_PLATFORM%\%BUILD_CONFIG%
 if not defined VCINSTALLDIR (
     echo [ERROR] Visual Studio environment not detected
     echo Please run from Visual Studio Developer Command Prompt
-    echo Or run: "C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\Tools\VsDevCmd.bat"
+    echo Or run: "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsDevCmd.bat"
     pause
     exit /b 1
 )
@@ -52,10 +55,12 @@ echo ===============================================
 call :CollectSources CORE_SOURCES "%SOLUTION_DIR%\src\phase1-userland\core\*.cpp"
 
 echo [BUILD] CLRNetCore.dll - Main runtime library
-cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DCLRNET_EXPORTS /DUNICODE /D_UNICODE ^
+:: Add /arch:AVX2 and /EHsc flags to enable AVX2 instructions and exception handling
+cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DCLRNET_EXPORTS ^
    /I"%SOLUTION_DIR%\src" /I"%SOLUTION_DIR%\include" ^
    /Fo"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\\" ^
    /Fd"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\CLRNetCore.pdb" ^
+   /arch:AVX2 /EHsc ^
    %CORE_SOURCES% ^
    /link /OUT:"%BUILD_OUTPUT%\CLRNetCore.dll" /DLL /PDB:"%BUILD_OUTPUT%\CLRNetCore.pdb"
 
@@ -255,60 +260,6 @@ echo Your modern .NET runtime binaries are ready for deployment.
 echo.
 goto :end
 
-:ConfigureWp81Sdk
-set "SDK_ROOT=%~1"
-if "%SDK_ROOT%"=="" goto configure_done
-if not exist "%SDK_ROOT%" goto configure_done
-
-echo [INFO] Using Windows Phone 8.1 SDK at %SDK_ROOT%
-
-set "SDK_INCLUDE_ARM=%SDK_ROOT%\Include\marm"
-set "SDK_INCLUDE_SHARED=%SDK_ROOT%\Include"
-set "SDK_INCLUDE_CRT=%SDK_INCLUDE_ARM%\crt"
-set "SDK_LIB_ARM=%SDK_ROOT%\Lib\ARM"
-set "SDK_LIB_WIN81=%SDK_ROOT%\Lib\winv6.3\um\ARM"
-set "SDK_BIN=%SDK_ROOT%\bin"
-set "SDK_REF=%SDK_ROOT%\References\CommonConfiguration\Neutral"
-
-if exist "%SDK_INCLUDE_CRT%" set "INCLUDE=%SDK_INCLUDE_CRT%;%SDK_INCLUDE_ARM%;%SDK_INCLUDE_SHARED%;%INCLUDE%"
-if exist "%SDK_LIB_ARM%" set "LIB=%SDK_LIB_ARM%;%SDK_LIB_WIN81%;%LIB%"
-if exist "%SDK_BIN%" set "PATH=%SDK_BIN%;%PATH%"
-if exist "%SDK_ROOT%" set "WindowsSdkDir=%SDK_ROOT%\"
-if exist "%SDK_REF%" set "WindowsPhoneReferencePath=%SDK_REF%"
-
-:configure_done
-goto :eof
-
-:EnsureArmToolchain
-set "_CLRNET_FORCE_ARM=0"
-if /I "%VSCMD_ARG_TGT_ARCH%"=="ARM" goto arm_configured
-if /I "%Platform%"=="ARM" goto arm_configured
-set "_CLRNET_FORCE_ARM=1"
-
-:arm_probe
-if defined VS140COMNTOOLS (
-    set "_CLRNET_VCVARS=%VS140COMNTOOLS%..\..\VC\vcvarsall.bat"
-    if exist "%_CLRNET_VCVARS%" goto call_vcvars
-)
-if defined VS120COMNTOOLS (
-    set "_CLRNET_VCVARS=%VS120COMNTOOLS%..\..\VC\vcvarsall.bat"
-    if exist "%_CLRNET_VCVARS%" goto call_vcvars
-)
-goto arm_configured
-
-:call_vcvars
-echo [INFO] Configuring Visual C++ ARM cross tools using %_CLRNET_VCVARS%
-call "%_CLRNET_VCVARS%" x86_arm store
-goto arm_configured
-
-:arm_configured
-if "%_CLRNET_FORCE_ARM%"=="1" (
-    if /I not "%VSCMD_ARG_TGT_ARCH%"=="ARM" (
-        echo [WARNING] Unable to confirm ARM toolchain activation. Build may fail.
-    )
-)
-goto :eof
-
 :CollectSources
 setlocal EnableDelayedExpansion
 set OUTPUT_VAR=%~1
@@ -317,18 +268,38 @@ set FILES=
 
 :collect_loop
 if "%~1"=="" goto collect_done
+set DIR_PATH=%~dp1
+if not exist "%DIR_PATH%" (
+    echo [ERROR] Directory does not exist: %DIR_PATH%
+    endlocal & exit /b 1
+)
 if exist "%~1" (
+    echo [DEBUG] Collecting files matching pattern: %~1
+    echo [DEBUG] Resolved path: %~dp1
     for /f "delims=" %%I in ('dir /b /s "%~1" 2^>nul') do (
+        echo [DEBUG] Found file: %%~fI
         set FILES=!FILES! "%%~fI"
     )
 ) else (
     echo [WARNING] No sources matched pattern %~1
+    echo [DEBUG] Checked path: %~1
 )
 shift
 goto collect_loop
 
 :collect_done
+if "!FILES!"=="" (
+    echo [ERROR] No source files were collected. Please check the paths and patterns.
+    endlocal & exit /b 1
+)
 endlocal & set "%OUTPUT_VAR%=%FILES%"
+goto :eof
+
+:ConfigureWp81Sdk
+rem Configure Windows Phone 8.1 SDK paths
+set INCLUDE=%1\Include;%INCLUDE%
+set LIB=%1\Lib;%LIB%
+set PATH=%1\Bin;%PATH%
 goto :eof
 
 :error

@@ -210,7 +210,7 @@ extern "C" {
     __declspec(dllexport) void* JIT_CallInstanceMethod(void* obj, void* methodPtr);
     
     // Exception handling
-    __declspec(dllexport) void JIT_ThrowException(void* exceptionObj);
+    __declspec(dllexport) void JIT_TerminateException(); // Renamed to match the updated function in `SimpleJIT.cpp`
     __declspec(dllexport) void JIT_HandleException(void* exceptionObj);
     
     // GC interaction

@@ -1,5 +1,7 @@
 #include "SimpleJIT.h"
+#include "GarbageCollector.h"
 #include <cassert>
+#include <cstring> // For memcpy
 
 namespace CLRNet {
 namespace Phase1 {
@@ -674,12 +676,9 @@ __declspec(dllexport) void* JIT_CallInstanceMethod(void* obj, void* methodPtr) {
     return nullptr;
 }
 
-__declspec(dllexport) void JIT_ThrowException(void* exceptionObj) {
-    // Throw managed exception - simplified
-    if (exceptionObj) {
-        // In real implementation would unwind stack and find exception handlers
-        throw std::runtime_error("Managed exception thrown");
-    }
+__declspec(dllexport) void JIT_TerminateException() noexcept {
+    // Handle exception logic without throwing
+    std::terminate();
 }
 
 __declspec(dllexport) void JIT_HandleException(void* exceptionObj) {
