@@ -79,6 +79,9 @@ Dynamic scenarios that rely on `Expression.Compile`, `DynamicMethod`, or other r
 ### Track C — Modern C# pipeline
 Leverage the [Track C build pipeline](docs/TRACK-C-MODERN-CS-PIPELINE.md) to compile with Roslyn `/langversion:latest`, automatically reference CLRNET's facade overlays, post-process assemblies with Mono.Cecil to retarget APIs, and optionally route `Expression.Compile()` through the Track B VM. The sample project in `examples/ModernCSharpPipeline` demonstrates records, ValueTask, JSON serialization, and VM-backed expressions working together on Windows Phone 8.1.
 
+### End-to-end integration playbook
+When starting a new app (or upgrading an existing one), follow the [CLRNET Application Integration Playbook](docs/CLRNET_APP_INTEGRATION_PLAYBOOK.md) for a stage-by-stage checklist that stitches Tracks A–C together—covering build configuration, IL post-processing, overlay packaging, VM warm-up, and on-device verification.
+
 ### Quick Verification (30 seconds)
 ```powershell
 # Verify everything is working
