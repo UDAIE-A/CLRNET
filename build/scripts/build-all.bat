@@ -143,6 +143,23 @@ echo Creating Deployment Packages
 echo ===============================================
 
 set PACKAGE_DIR=%BUILD_OUTPUT%\packages
+set OVERLAY_ROOT=%SOLUTION_DIR%\build\output\%BUILD_PLATFORM%-%BUILD_CONFIG%\CLRNetOverlay
+
+echo [PACK] CLRNet overlay facades
+powershell -NoProfile -ExecutionPolicy Bypass -File "%SOLUTION_DIR%\build\scripts\package-overlay.ps1" -Configuration %BUILD_CONFIG% -Platform %BUILD_PLATFORM%
+if errorlevel 1 (
+    echo [ERROR] Overlay packaging script failed
+    goto :error
+)
+
+if not exist "%OVERLAY_ROOT%" (
+    echo [ERROR] Overlay bundle was not generated at %OVERLAY_ROOT%
+    goto :error
+)
+
+if not exist "%PACKAGE_DIR%\CLRNet-Overlay" mkdir "%PACKAGE_DIR%\CLRNet-Overlay"
+xcopy "%OVERLAY_ROOT%" "%PACKAGE_DIR%\CLRNet-Overlay\" /E /I /Y >nul
+echo [OK] Overlay package created
 
 :: Core Runtime Package
 if not exist "%PACKAGE_DIR%\CLRNet-Runtime" mkdir "%PACKAGE_DIR%\CLRNet-Runtime"
@@ -201,11 +218,13 @@ echo   - CLRNetHost.exe     (Host executable)
 echo   - CLRNetInterop.dll  (Interop layer)
 echo   - CLRNetSystem.dll   (System integration)
 echo   - CLRNetTests.exe    (Test suite)
+echo   - CLRNetOverlay      (Track A facade bundle)
 echo.
 echo Deployment packages:
 echo   - CLRNet-Runtime     (Core components)
 echo   - CLRNet-Interop     (Interop components)
 echo   - CLRNet-System      (System components)
+echo   - CLRNet-Overlay     (Track A facades)
 echo   - CLRNet-Complete    (All components)
 echo.
 echo [SUCCESS] CLRNet Runtime build completed!
