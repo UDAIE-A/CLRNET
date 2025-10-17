@@ -1,4 +1,5 @@
 @echo off
+setlocal EnableDelayedExpansion
 echo ===============================================
 echo CLRNet Runtime - Complete Build Script
 echo ===============================================
@@ -19,6 +20,9 @@ if not defined VCINSTALLDIR (
     exit /b 1
 )
 
+:: Ensure the ARM cross-compilation environment is active
+call :EnsureArmToolchain
+
 :: Check for Windows Phone SDK
 if not exist "%ProgramFiles(x86)%\Microsoft SDKs\WindowsPhoneApp\v8.1" (
     echo [ERROR] Windows Phone 8.1 SDK not found
@@ -26,6 +30,9 @@ if not exist "%ProgramFiles(x86)%\Microsoft SDKs\WindowsPhoneApp\v8.1" (
     pause
     exit /b 1
 )
+
+:: Prefer Windows Phone 8.1 SDK headers/libs over newer Desktop kits
+call :ConfigureWp81Sdk "%ProgramFiles(x86)%\Microsoft SDKs\WindowsPhoneApp\v8.1"
 
 echo [INFO] Building CLRNet Runtime...
 echo [INFO] Configuration: %BUILD_CONFIG%
@@ -42,12 +49,14 @@ echo ===============================================
 echo Phase 1: Building Core Runtime Components
 echo ===============================================
 
+call :CollectSources CORE_SOURCES "%SOLUTION_DIR%\src\phase1-userland\core\*.cpp"
+
 echo [BUILD] CLRNetCore.dll - Main runtime library
-cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DCLRNET_EXPORTS ^
+cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DCLRNET_EXPORTS /DUNICODE /D_UNICODE ^
    /I"%SOLUTION_DIR%\src" /I"%SOLUTION_DIR%\include" ^
    /Fo"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\\" ^
    /Fd"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\CLRNetCore.pdb" ^
-   "%SOLUTION_DIR%\src\phase1-userland\core\*.cpp" ^
+   %CORE_SOURCES% ^
    /link /OUT:"%BUILD_OUTPUT%\CLRNetCore.dll" /DLL /PDB:"%BUILD_OUTPUT%\CLRNetCore.pdb"
 
 if errorlevel 1 (
@@ -57,7 +66,7 @@ if errorlevel 1 (
 echo [OK] CLRNetCore.dll built successfully
 
 echo [BUILD] CLRNetHost.exe - Runtime host executable  
-cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_CONSOLE ^
+cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_CONSOLE /DUNICODE /D_UNICODE ^
    /I"%SOLUTION_DIR%\src" /I"%SOLUTION_DIR%\include" ^
    /Fo"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\\" ^
    /Fd"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\CLRNetHost.pdb" ^
@@ -77,13 +86,18 @@ echo ===============================================
 echo Phase 2: Building Interop Components
 echo ===============================================
 
+call :CollectSources INTEROP_SOURCES ^
+   "%SOLUTION_DIR%\src\interop\*.cpp" ^
+   "%SOLUTION_DIR%\src\interop\winrt\*.cpp" ^
+   "%SOLUTION_DIR%\src\interop\pinvoke\*.cpp" ^
+   "%SOLUTION_DIR%\src\interop\hardware\*.cpp"
+
 echo [BUILD] CLRNetInterop.dll - System interop layer
-cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DCLRNET_INTEROP_EXPORTS ^
+cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DCLRNET_INTEROP_EXPORTS /DUNICODE /D_UNICODE ^
    /I"%SOLUTION_DIR%\src" /I"%SOLUTION_DIR%\include" ^
    /Fo"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\\" ^
    /Fd"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\CLRNetInterop.pdb" ^
-   "%SOLUTION_DIR%\src\interop\*.cpp" "%SOLUTION_DIR%\src\interop\winrt\*.cpp" ^
-   "%SOLUTION_DIR%\src\interop\pinvoke\*.cpp" "%SOLUTION_DIR%\src\interop\hardware\*.cpp" ^
+   %INTEROP_SOURCES% ^
    /link /OUT:"%BUILD_OUTPUT%\CLRNetInterop.dll" /DLL /PDB:"%BUILD_OUTPUT%\CLRNetInterop.pdb" ^
    "%BUILD_OUTPUT%\CLRNetCore.lib" windowsapp.lib
 
@@ -99,13 +113,17 @@ echo ===============================================
 echo Phase 3: Building System Integration Components
 echo ===============================================
 
+call :CollectSources SYSTEM_SOURCES ^
+   "%SOLUTION_DIR%\src\system\replacement\*.cpp" ^
+   "%SOLUTION_DIR%\src\system\hooks\*.cpp" ^
+   "%SOLUTION_DIR%\src\system\compatibility\*.cpp"
+
 echo [BUILD] CLRNetSystem.dll - System integration layer
-cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DCLRNET_SYSTEM_EXPORTS ^
+cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_WINDOWS /D_USRDLL /DCLRNET_SYSTEM_EXPORTS /DUNICODE /D_UNICODE ^
    /I"%SOLUTION_DIR%\src" /I"%SOLUTION_DIR%\include" ^
    /Fo"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\\" ^
    /Fd"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\CLRNetSystem.pdb" ^
-   "%SOLUTION_DIR%\src\system\replacement\*.cpp" "%SOLUTION_DIR%\src\system\hooks\*.cpp" ^
-   "%SOLUTION_DIR%\src\system\compatibility\*.cpp" ^
+   %SYSTEM_SOURCES% ^
    /link /OUT:"%BUILD_OUTPUT%\CLRNetSystem.dll" /DLL /PDB:"%BUILD_OUTPUT%\CLRNetSystem.pdb" ^
    "%BUILD_OUTPUT%\CLRNetCore.lib" "%BUILD_OUTPUT%\CLRNetInterop.lib" ntdll.lib psapi.lib
 
@@ -121,12 +139,17 @@ echo ===============================================
 echo Building Test Suite
 echo ===============================================
 
+call :CollectSources TEST_SOURCES ^
+   "%SOLUTION_DIR%\tests\core\*.cpp" ^
+   "%SOLUTION_DIR%\tests\interop\*.cpp" ^
+   "%SOLUTION_DIR%\tests\system\*.cpp"
+
 echo [BUILD] CLRNetTests.exe - Test suite runner
-cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_CONSOLE ^
+cl /nologo /W3 /O2 /MD /DWIN32 /DNDEBUG /D_CONSOLE /DUNICODE /D_UNICODE ^
    /I"%SOLUTION_DIR%\src" /I"%SOLUTION_DIR%\include" /I"%SOLUTION_DIR%\tests\include" ^
    /Fo"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\\" ^
    /Fd"%SOLUTION_DIR%\build\obj\%BUILD_PLATFORM%\%BUILD_CONFIG%\CLRNetTests.pdb" ^
-   "%SOLUTION_DIR%\tests\core\*.cpp" "%SOLUTION_DIR%\tests\interop\*.cpp" "%SOLUTION_DIR%\tests\system\*.cpp" ^
+   %TEST_SOURCES% ^
    /link /OUT:"%BUILD_OUTPUT%\CLRNetTests.exe" /PDB:"%BUILD_OUTPUT%\CLRNetTests.pdb" ^
    "%BUILD_OUTPUT%\CLRNetCore.lib" "%BUILD_OUTPUT%\CLRNetInterop.lib" "%BUILD_OUTPUT%\CLRNetSystem.lib"
 
@@ -143,6 +166,23 @@ echo Creating Deployment Packages
 echo ===============================================
 
 set PACKAGE_DIR=%BUILD_OUTPUT%\packages
+set OVERLAY_ROOT=%SOLUTION_DIR%\build\output\%BUILD_PLATFORM%-%BUILD_CONFIG%\CLRNetOverlay
+
+echo [PACK] CLRNet overlay facades
+powershell -NoProfile -ExecutionPolicy Bypass -File "%SOLUTION_DIR%\build\scripts\package-overlay.ps1" -Configuration %BUILD_CONFIG% -Platform %BUILD_PLATFORM%
+if errorlevel 1 (
+    echo [ERROR] Overlay packaging script failed
+    goto :error
+)
+
+if not exist "%OVERLAY_ROOT%" (
+    echo [ERROR] Overlay bundle was not generated at %OVERLAY_ROOT%
+    goto :error
+)
+
+if not exist "%PACKAGE_DIR%\CLRNet-Overlay" mkdir "%PACKAGE_DIR%\CLRNet-Overlay"
+xcopy "%OVERLAY_ROOT%" "%PACKAGE_DIR%\CLRNet-Overlay\" /E /I /Y >nul
+echo [OK] Overlay package created
 
 :: Core Runtime Package
 if not exist "%PACKAGE_DIR%\CLRNet-Runtime" mkdir "%PACKAGE_DIR%\CLRNet-Runtime"
@@ -201,17 +241,95 @@ echo   - CLRNetHost.exe     (Host executable)
 echo   - CLRNetInterop.dll  (Interop layer)
 echo   - CLRNetSystem.dll   (System integration)
 echo   - CLRNetTests.exe    (Test suite)
+echo   - CLRNetOverlay      (Track A facade bundle)
 echo.
 echo Deployment packages:
 echo   - CLRNet-Runtime     (Core components)
 echo   - CLRNet-Interop     (Interop components)
 echo   - CLRNet-System      (System components)
+echo   - CLRNet-Overlay     (Track A facades)
 echo   - CLRNet-Complete    (All components)
 echo.
 echo [SUCCESS] CLRNet Runtime build completed!
 echo Your modern .NET runtime binaries are ready for deployment.
 echo.
 goto :end
+
+:ConfigureWp81Sdk
+set "SDK_ROOT=%~1"
+if "%SDK_ROOT%"=="" goto configure_done
+if not exist "%SDK_ROOT%" goto configure_done
+
+echo [INFO] Using Windows Phone 8.1 SDK at %SDK_ROOT%
+
+set "SDK_INCLUDE_ARM=%SDK_ROOT%\Include\marm"
+set "SDK_INCLUDE_SHARED=%SDK_ROOT%\Include"
+set "SDK_INCLUDE_CRT=%SDK_INCLUDE_ARM%\crt"
+set "SDK_LIB_ARM=%SDK_ROOT%\Lib\ARM"
+set "SDK_LIB_WIN81=%SDK_ROOT%\Lib\winv6.3\um\ARM"
+set "SDK_BIN=%SDK_ROOT%\bin"
+set "SDK_REF=%SDK_ROOT%\References\CommonConfiguration\Neutral"
+
+if exist "%SDK_INCLUDE_CRT%" set "INCLUDE=%SDK_INCLUDE_CRT%;%SDK_INCLUDE_ARM%;%SDK_INCLUDE_SHARED%;%INCLUDE%"
+if exist "%SDK_LIB_ARM%" set "LIB=%SDK_LIB_ARM%;%SDK_LIB_WIN81%;%LIB%"
+if exist "%SDK_BIN%" set "PATH=%SDK_BIN%;%PATH%"
+if exist "%SDK_ROOT%" set "WindowsSdkDir=%SDK_ROOT%\"
+if exist "%SDK_REF%" set "WindowsPhoneReferencePath=%SDK_REF%"
+
+:configure_done
+goto :eof
+
+:EnsureArmToolchain
+set "_CLRNET_FORCE_ARM=0"
+if /I "%VSCMD_ARG_TGT_ARCH%"=="ARM" goto arm_configured
+if /I "%Platform%"=="ARM" goto arm_configured
+set "_CLRNET_FORCE_ARM=1"
+
+:arm_probe
+if defined VS140COMNTOOLS (
+    set "_CLRNET_VCVARS=%VS140COMNTOOLS%..\..\VC\vcvarsall.bat"
+    if exist "%_CLRNET_VCVARS%" goto call_vcvars
+)
+if defined VS120COMNTOOLS (
+    set "_CLRNET_VCVARS=%VS120COMNTOOLS%..\..\VC\vcvarsall.bat"
+    if exist "%_CLRNET_VCVARS%" goto call_vcvars
+)
+goto arm_configured
+
+:call_vcvars
+echo [INFO] Configuring Visual C++ ARM cross tools using %_CLRNET_VCVARS%
+call "%_CLRNET_VCVARS%" x86_arm store
+goto arm_configured
+
+:arm_configured
+if "%_CLRNET_FORCE_ARM%"=="1" (
+    if /I not "%VSCMD_ARG_TGT_ARCH%"=="ARM" (
+        echo [WARNING] Unable to confirm ARM toolchain activation. Build may fail.
+    )
+)
+goto :eof
+
+:CollectSources
+setlocal EnableDelayedExpansion
+set OUTPUT_VAR=%~1
+shift
+set FILES=
+
+:collect_loop
+if "%~1"=="" goto collect_done
+if exist "%~1" (
+    for /f "delims=" %%I in ('dir /b /s "%~1" 2^>nul') do (
+        set FILES=!FILES! "%%~fI"
+    )
+) else (
+    echo [WARNING] No sources matched pattern %~1
+)
+shift
+goto collect_loop
+
+:collect_done
+endlocal & set "%OUTPUT_VAR%=%FILES%"
+goto :eof
 
 :error
 echo.

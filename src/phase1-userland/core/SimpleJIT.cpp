@@ -648,7 +648,7 @@ __declspec(dllexport) void* JIT_AllocateString(int length) {
 __declspec(dllexport) void JIT_InitializeString(void* str, const wchar_t* data) {
     // Initialize string object with data
     if (str && data) {
-        wchar_t* stringData = static_cast<wchar_t*>(
+        auto* stringData = reinterpret_cast<wchar_t*>(
             static_cast<char*>(str) + sizeof(ObjectHeader)
         );
         wcscpy_s(stringData, wcslen(data) + 1, data);

@@ -1,6 +1,90 @@
 #include "AssemblyLoader.h"
+#include "OverlayConfig.h"
 #include <cassert>
 #include <algorithm>
+#include <cwctype>
+
+namespace {
+
+std::wstring CombinePath(const std::wstring& base, const std::wstring& relative) {
+    if (relative.empty()) {
+        return base;
+    }
+
+    if (relative.size() >= 2 && (relative[1] == L':' || (relative[0] == L'\\' && relative[1] == L'\\'))) {
+        return relative;
+    }
+
+    if (base.empty()) {
+        return relative;
+    }
+
+    std::wstring result = base;
+    if (!result.empty()) {
+        wchar_t tail = result.back();
+        if (tail != L'\\' && tail != L'/') {
+            result.push_back(L'\\');
+        }
+    }
+
+    result += relative;
+    std::replace(result.begin(), result.end(), L'/', L'\\');
+    return result;
+}
+
+bool LooksLikeAssemblyName(const std::wstring& value) {
+    if (value.empty()) {
+        return false;
+    }
+
+    for (wchar_t ch : value) {
+        if (ch == L'\\' || ch == L'/' || ch == L':') {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+std::wstring ToLowerInvariant(std::wstring value) {
+    std::transform(value.begin(), value.end(), value.begin(), ::towlower);
+    return value;
+}
+
+std::wstring GetLowercaseExtension(const std::wstring& value) {
+    size_t dot = value.find_last_of(L'.');
+    if (dot == std::wstring::npos) {
+        return std::wstring();
+    }
+
+    return ToLowerInvariant(value.substr(dot));
+}
+
+std::wstring NormalizeAssemblySimpleName(const std::wstring& value) {
+    std::wstring extension = GetLowercaseExtension(value);
+    if (extension == L".dll") {
+        return value.substr(0, value.length() - 4);
+    }
+
+    return value;
+}
+
+std::string WideToUtf8(const std::wstring& value) {
+    if (value.empty()) {
+        return std::string();
+    }
+
+    int required = WideCharToMultiByte(CP_UTF8, 0, value.c_str(), static_cast<int>(value.size()), nullptr, 0, nullptr, nullptr);
+    if (required <= 0) {
+        return std::string(value.begin(), value.end());
+    }
+
+    std::string result(static_cast<size_t>(required), '\0');
+    WideCharToMultiByte(CP_UTF8, 0, value.c_str(), static_cast<int>(value.size()), &result[0], required, nullptr, nullptr);
+    return result;
+}
+
+} // namespace
 
 namespace CLRNet {
 namespace Phase1 {
@@ -78,8 +162,8 @@ void LoadedAssembly::Unload() {
 
 bool LoadedAssembly::MapFile() {
     // Open file
-    m_fileHandle = CreateFile(m_path.c_str(), GENERIC_READ, FILE_SHARE_READ, 
-                              nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    m_fileHandle = CreateFileW(m_path.c_str(), GENERIC_READ, FILE_SHARE_READ,
+                               nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (m_fileHandle == INVALID_HANDLE_VALUE) {
         return false;
     }
@@ -94,7 +178,7 @@ bool LoadedAssembly::MapFile() {
     m_fileSize = static_cast<size_t>(fileSize.QuadPart);
     
     // Create file mapping
-    m_mappingHandle = CreateFileMapping(m_fileHandle, nullptr, PAGE_READONLY, 0, 0, nullptr);
+    m_mappingHandle = CreateFileMappingW(m_fileHandle, nullptr, PAGE_READONLY, 0, 0, nullptr);
     if (!m_mappingHandle) {
         CloseHandle(m_fileHandle);
         m_fileHandle = INVALID_HANDLE_VALUE;
@@ -374,10 +458,11 @@ AssemblyLoader::~AssemblyLoader() {
 
 bool AssemblyLoader::Initialize() {
     if (m_initialized) return true;
-    
+
     if (!m_typeSystem) return false;
-    
+
     m_initialized = true;
+    LoadOverlayConfiguration();
     return true;
 }
 
@@ -397,9 +482,26 @@ void AssemblyLoader::Shutdown() {
 
 bool AssemblyLoader::LoadAssembly(const std::wstring& assemblyPath) {
     if (!m_initialized) return false;
-    
+
+    if (LooksLikeAssemblyName(assemblyPath)) {
+        std::wstring simpleName = NormalizeAssemblySimpleName(assemblyPath);
+        std::wstring extension = GetLowercaseExtension(assemblyPath);
+        std::string canonicalName = WideToUtf8(simpleName);
+
+        if (TryEnsureAssemblyByName(canonicalName)) {
+            return true;
+        }
+
+        std::wstring candidate = extension.empty() ? (simpleName + L".dll") : assemblyPath;
+        return LoadAssemblyInternal(candidate);
+    }
+
+    return LoadAssemblyInternal(assemblyPath);
+}
+
+bool AssemblyLoader::LoadAssemblyInternal(const std::wstring& assemblyPath) {
     EnterCriticalSection(&m_loaderLock);
-    
+
     try {
         // Check if already loaded
         auto it = m_assemblies.find(assemblyPath);
@@ -407,30 +509,30 @@ bool AssemblyLoader::LoadAssembly(const std::wstring& assemblyPath) {
             LeaveCriticalSection(&m_loaderLock);
             return true;
         }
-        
+
         // Validate file exists and is valid PE
         if (!IsValidPEFile(assemblyPath)) {
             LeaveCriticalSection(&m_loaderLock);
             return false;
         }
-        
+
         // Create and load assembly
         auto assembly = std::make_unique<LoadedAssembly>(assemblyPath);
         if (!assembly->Load()) {
             LeaveCriticalSection(&m_loaderLock);
             return false;
         }
-        
+
         // Register assembly
         LoadedAssembly* assemblyPtr = assembly.get();
         m_assemblies[assemblyPath] = std::move(assembly);
-        
+
         std::string assemblyName = ExtractAssemblyName(assemblyPath);
         m_assembliesByName[assemblyName] = assemblyPtr;
-        
+
         // Update type system with new types
         UpdateTypeSystem(assemblyPtr);
-        
+
         LeaveCriticalSection(&m_loaderLock);
         return true;
     }
@@ -439,6 +541,7 @@ bool AssemblyLoader::LoadAssembly(const std::wstring& assemblyPath) {
         return false;
     }
 }
+
 
 bool AssemblyLoader::UnloadAssembly(const std::wstring& assemblyPath) {
     if (!m_initialized) return false;
@@ -468,15 +571,30 @@ LoadedAssembly* AssemblyLoader::FindAssembly(const std::wstring& assemblyPath) {
 
 LoadedAssembly* AssemblyLoader::FindAssemblyByName(const std::string& assemblyName) {
     EnterCriticalSection(&m_loaderLock);
-    
+
     auto it = m_assembliesByName.find(assemblyName);
+    if (it != m_assembliesByName.end()) {
+        LoadedAssembly* result = it->second;
+        LeaveCriticalSection(&m_loaderLock);
+        return result;
+    }
+
+    LeaveCriticalSection(&m_loaderLock);
+
+    if (!TryEnsureAssemblyByName(assemblyName)) {
+        return nullptr;
+    }
+
+    EnterCriticalSection(&m_loaderLock);
+    it = m_assembliesByName.find(assemblyName);
     LoadedAssembly* result = (it != m_assembliesByName.end()) ? it->second : nullptr;
-    
     LeaveCriticalSection(&m_loaderLock);
     return result;
 }
 
 MethodTable* AssemblyLoader::ResolveType(const std::string& typeName) {
+    TryEnsureOverlayAssemblyForType(typeName);
+
     // Search all loaded assemblies for the type
     EnterCriticalSection(&m_loaderLock);
     
@@ -493,6 +611,7 @@ MethodTable* AssemblyLoader::ResolveType(const std::string& typeName) {
 }
 
 MethodTable* AssemblyLoader::ResolveType(const std::string& typeName, const std::string& assemblyName) {
+    TryEnsureAssemblyByName(assemblyName);
     LoadedAssembly* assembly = FindAssemblyByName(assemblyName);
     return assembly ? assembly->GetMethodTable(typeName) : nullptr;
 }
@@ -553,6 +672,70 @@ bool AssemblyLoader::IsAssemblyLoaded(const std::wstring& assemblyPath) {
     return FindAssembly(assemblyPath) != nullptr;
 }
 
+void AssemblyLoader::RefreshOverlayConfiguration() {
+    LoadOverlayConfiguration();
+}
+
+bool AssemblyLoader::TryEnsureOverlayAssemblyForType(const std::string& typeName) {
+    if (!m_overlayConfig.enabled) {
+        return false;
+    }
+
+    auto it = m_overlayConfig.typeForwardMap.find(typeName);
+    if (it == m_overlayConfig.typeForwardMap.end()) {
+        return false;
+    }
+
+    return TryEnsureAssemblyByName(it->second);
+}
+
+bool AssemblyLoader::TryEnsureAssemblyByName(const std::string& assemblyName) {
+    if (assemblyName.empty()) {
+        return false;
+    }
+
+    EnterCriticalSection(&m_loaderLock);
+    bool alreadyLoaded = m_assembliesByName.find(assemblyName) != m_assembliesByName.end();
+    LeaveCriticalSection(&m_loaderLock);
+
+    if (alreadyLoaded) {
+        return true;
+    }
+
+    if (!m_overlayConfig.enabled) {
+        return false;
+    }
+
+    return LoadAssemblyFromSearchPaths(assemblyName);
+}
+
+bool AssemblyLoader::LoadAssemblyFromSearchPaths(const std::string& assemblyName) {
+    if (assemblyName.empty()) {
+        return false;
+    }
+
+    std::wstring assemblyFile = Utf8ToWide(assemblyName);
+    if (assemblyFile.find(L'.') == std::wstring::npos) {
+        assemblyFile += L".dll";
+    }
+
+    bool loaded = false;
+
+    for (const auto& searchPath : m_overlayConfig.searchPaths) {
+        std::wstring candidate = CombinePath(searchPath, assemblyFile);
+        if (LoadAssembly(candidate)) {
+            loaded = true;
+            break;
+        }
+    }
+
+    return loaded;
+}
+
+void AssemblyLoader::LoadOverlayConfiguration() {
+    m_overlayConfig = OverlayConfigLoader::Load();
+}
+
 std::string AssemblyLoader::ExtractAssemblyName(const std::wstring& path) {
     // Extract filename without extension
     size_t lastSlash = path.find_last_of(L"\\/");
@@ -572,8 +755,8 @@ std::string AssemblyLoader::ExtractAssemblyName(const std::wstring& path) {
 
 bool AssemblyLoader::IsValidPEFile(const std::wstring& path) {
     // Simple validation - check if file exists and has PE signature
-    HANDLE file = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ,
-                            nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    HANDLE file = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ,
+                              nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     
     if (file == INVALID_HANDLE_VALUE) {
         return false;

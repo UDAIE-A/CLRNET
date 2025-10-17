@@ -1,139 +1,102 @@
 # Build Configuration for CLRNET
 
 ## Overview
-This directory contains build scripts and configuration for cross-compiling the CLRNET runtime to target Windows Phone 8.1 ARM architecture.
+The `build/` directory contains the tooling we use to assemble CLRNET for Windows Phone 8.1.  It now drives three parallel outputs:
 
-## Build Requirements
+1. **Native runtime binaries** (core engine, host, interop, system glue, and test harness) under `build/bin/`.
+2. **Modern overlay facades** that expose the Track A API surface, staged under `build/output/<platform>-<configuration>/CLRNetOverlay`.
+3. **Distributable packages** in `build/bin/<platform>/<configuration>/packages/`, combining the native runtime and overlay payload for shipping with applications.
 
-### Development Environment
-- **Host OS:** Windows 10/11
-- **Visual Studio:** 2015 or later with ARM support
-- **Windows Phone SDK:** 8.1 SDK installed
-- **Build Tools:** MSBuild, CMake (optional)
+## Prerequisites
+- Windows 10/11 with the Windows Phone 8.1 SDK installed
+- Visual Studio 2015 or later with ARM toolset support
+- PowerShell 5.0+ (used by `build.ps1` and helper scripts)
+- MSBuild available on `%PATH%` (the script auto-detects common install paths)
 
-### Target Platform
-- **Architecture:** ARM32 (ARMv7)
-- **OS:** Windows Phone 8.1
-- **Runtime:** Windows CE 8.0 based
-
-## Build Scripts
-
-### build.ps1 - Main Build Script
-PowerShell script that orchestrates the entire build process:
-1. Environment validation
-2. Dependency checking  
-3. Cross-compilation for ARM
-4. Package generation
-5. Deployment preparation
-
-### cmake/ - CMake Configuration
-Alternative build system using CMake for cross-platform development:
-- CMakeLists.txt for each component
-- ARM toolchain configuration
-- Dependency management
-
-### msbuild/ - MSBuild Configuration  
-Native Windows build system integration:
-- Solution and project files
-- ARM platform configuration
-- NuGet package management
-
-## Build Process
-
-### Phase 1: Environment Setup
-```powershell
-# Validate development environment
-.\build.ps1 -Target ValidateEnvironment
-
-# Install required dependencies
-.\build.ps1 -Target InstallDependencies
-```
-
-### Phase 2: Core Runtime Build
-```powershell
-# Build core CLR components
-.\build.ps1 -Target BuildRuntime -Platform ARM
-
-# Build base class library
-.\build.ps1 -Target BuildBCL -Platform ARM
-```
-
-### Phase 3: Test Applications
-```powershell
-# Build test applications
-.\build.ps1 -Target BuildTests -Platform ARM
-
-# Package for deployment
-.\build.ps1 -Target Package -Platform ARM
-```
-
-### Phase 4: Deployment
-```powershell
-# Deploy to device or emulator
-.\build.ps1 -Target Deploy -Device "Device Name"
-```
-
-## Platform Configuration
-
-### ARM Cross-Compilation Settings
-```xml
-<PropertyGroup>
-  <Platform>ARM</Platform>
-  <PlatformToolset>v140</PlatformToolset>
-  <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
-  <ConfigurationType>DynamicLibrary</ConfigurationType>
-</PropertyGroup>
-```
-
-### Linker Configuration
-- Target Windows CE subsystem
-- ARM calling conventions
-- Position-independent code
-- Compact executable format
-
-## Output Structure
+## Directory layout
 ```
 build/
-├─ output/
-│  ├─ arm-release/      # Release builds
-│  ├─ arm-debug/        # Debug builds  
-│  └─ packages/         # Deployment packages
-├─ intermediate/        # Build temporaries
-├─ logs/               # Build logs
-└─ cache/              # Build cache
+├─ bin/                       # Staged native binaries (per platform/config)
+│  └─ ARM/Release/
+│     ├─ CLRNetCore.dll
+│     ├─ CLRNetHost.exe
+│     ├─ CLRNetInterop.dll
+│     ├─ CLRNetSystem.dll
+│     ├─ CLRNetTests.exe
+│     └─ packages/            # Runtime + overlay delivery bundles
+├─ output/                    # Non-native assets (overlay facades, caches)
+│  └─ ARM-Release/
+│     └─ CLRNetOverlay/       # App-local facade bundle with manifest + forwards
+├─ logs/                      # Build transcript + diagnostics
+├─ scripts/                   # Batch/PowerShell convenience wrappers
+├─ build.ps1                  # Main orchestrator (validate, build, package)
+└─ BUILD_SYSTEM.md            # High-level description of binary outputs
 ```
 
-## Deployment Packages
+## Key scripts
+| Script | When to use it |
+| --- | --- |
+| `build/build.ps1` | Primary entry point. Supports validation, native build, overlay compilation, packaging, and deployment stubs. |
+| `build/scripts/build-all.bat` | One-shot wrapper for Windows command prompts. Calls the PowerShell build and now also generates the overlay bundle automatically. |
+| `build/scripts/package-overlay.ps1` | Lightweight helper that just builds and stages the Track A overlay facades (invokes `build.ps1 -Target PackageOverlay`). |
+| `build/scripts/build-demo.bat` | Simulated build for environments without the full toolchain; now emits placeholder overlay assets so verification scripts still succeed. |
+| `build/scripts/verify-binaries.bat` | Validates native binaries **and** the CLRNet overlay bundle to ensure every facade is present before packaging. |
 
-### Runtime Package (clrnet-runtime.wpx)
-- Core CLR implementation
-- Base class library
-- JIT compiler
-- Garbage collector
-- Platform abstraction layer
+## Typical workflow
+1. **Validate environment**
+   ```powershell
+   pwsh build/build.ps1 -Target ValidateEnvironment
+   ```
+2. **Build native runtime + tests and compile overlay facades**
+   ```powershell
+   pwsh build/build.ps1 -Target Build -Platform ARM -Configuration Release
+   ```
+   This target now performs four steps in sequence: native runtime compilation, test harness copy, Track A overlay compilation, and overlay packaging.
+3. **Generate distributable packages**
+   ```powershell
+   pwsh build/build.ps1 -Target Package -Platform ARM -Configuration Release
+   ```
+4. **(Optional) Regenerate overlay bundle only**
+   ```powershell
+   pwsh build/scripts/package-overlay.ps1 -Platform ARM -Configuration Release
+   ```
+   Useful after tweaking facade code or the type forward map without rebuilding the native runtime.
+5. **Verify outputs**
+   ```cmd
+   build\scripts\verify-binaries.bat
+   ```
+   Confirms that binaries, overlay facades, the forward map, and the generated manifest all exist.
 
-### Test Package (clrnet-tests.wpx)  
-- Test applications
-- Validation utilities
-- Performance benchmarks
-- Sample code
+## Overlay bundle contents
+Running either `build.ps1 -Target Build` or `package-overlay.ps1` produces:
+```
+build/output/ARM-Release/CLRNetOverlay/
+├─ CLRNet.Core.OverlaySupport.dll
+├─ overlay.manifest.json
+├─ type-forward-map.txt
+└─ facades/
+   ├─ CLRNet.Facade.System.Runtime.dll
+   ├─ CLRNet.Facade.System.ValueTuple.dll
+   ├─ CLRNet.Facade.System.Threading.Tasks.Extensions.dll
+   ├─ CLRNet.Facade.System.Text.Json.dll
+   ├─ CLRNet.Facade.System.Buffers.dll
+   ├─ CLRNet.Facade.System.Net.Http.dll
+   └─ CLRNet.Facade.System.IO.dll
+```
+When `build/scripts/build-all.bat` runs, it copies this directory into `build/bin/ARM/Release/packages/CLRNet-Overlay/` so deployment artifacts already include the Track A facades beside the native runtime packages.
 
-### Developer Package (clrnet-devtools.wpx)
-- Debugging utilities
-- Profiling tools
-- Deployment helpers
-- Documentation
+## Logs and diagnostics
+- `build/logs/build.log` gathers all messages from `build.ps1`, including overlay compilation and packaging status.
+- Batch scripts emit progress to the console; failures drop into the `:error` section and preserve the last exit code for CI detection.
+- Overlay manifests include a timestamp and configuration to help compare payloads across builds.
 
-## Build Validation
+## Updating the overlay forward map
+The packaging step copies `examples/overlay/type-forward-map.txt` into the bundle.  Adjust that file when you add new facades or forward additional types, then rerun `package-overlay.ps1` so the updated manifest ships with your app.
 
-### Automated Tests
-- Compilation verification
-- Link-time validation  
-- Package integrity checks
-- Basic functionality tests
+## Next steps
+After a successful build you will find:
+- Runtime binaries under `build/bin/ARM/Release/`
+- Overlay bundle under `build/output/ARM-Release/CLRNetOverlay/`
+- Zipped/structured packages under `build/bin/ARM/Release/packages/`
 
-### Manual Verification
-- Deploy to device/emulator
-- Execute test applications
-- Verify runtime behavior
-- Performance validation
+From there follow the CLRNET Application Integration Playbook to drop the overlay folder into your AppX and sideload the runtime onto Windows Phone devices.

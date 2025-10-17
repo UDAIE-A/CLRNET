@@ -12,6 +12,7 @@
 #include <vector>
 #include <unordered_map>
 #include "TypeSystem.h"
+#include "OverlayConfig.h"
 
 namespace CLRNet {
 namespace Phase1 {
@@ -278,10 +279,14 @@ class AssemblyLoader {
 public:
     AssemblyLoader(TypeSystem* typeSystem);
     ~AssemblyLoader();
-    
+
     // Initialization
     bool Initialize();
     void Shutdown();
+
+    // Overlay configuration
+    void RefreshOverlayConfiguration();
+    const OverlayConfig& GetOverlayConfiguration() const { return m_overlayConfig; }
     
     // Assembly loading
     bool LoadAssembly(const std::wstring& assemblyPath);
@@ -300,22 +305,31 @@ public:
     // Assembly enumeration
     std::vector<LoadedAssembly*> GetLoadedAssemblies();
     std::vector<std::string> GetLoadedTypeNames();
-    
+
     // Security and validation
     bool ValidateAssembly(const std::wstring& assemblyPath);
     bool IsAssemblyLoaded(const std::wstring& assemblyPath);
-    
+
 private:
     TypeSystem* m_typeSystem;
     bool m_initialized;
-    
+
     // Loaded assemblies
     std::unordered_map<std::wstring, std::unique_ptr<LoadedAssembly>> m_assemblies;
     std::unordered_map<std::string, LoadedAssembly*> m_assembliesByName;
-    
+
     // Security and validation
     CRITICAL_SECTION m_loaderLock;
-    
+
+    // Overlay support
+    OverlayConfig m_overlayConfig;
+
+    bool LoadAssemblyInternal(const std::wstring& assemblyPath);
+    bool TryEnsureOverlayAssemblyForType(const std::string& typeName);
+    bool TryEnsureAssemblyByName(const std::string& assemblyName);
+    bool LoadAssemblyFromSearchPaths(const std::string& assemblyName);
+    void LoadOverlayConfiguration();
+
     // Helper methods
     std::string ExtractAssemblyName(const std::wstring& path);
     bool IsValidPEFile(const std::wstring& path);

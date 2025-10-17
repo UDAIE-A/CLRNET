@@ -11,6 +11,8 @@
 #include <vector>
 #include <unordered_set>
 #include <unordered_map>
+#include <functional>
+
 #include "TypeSystem.h"
 
 namespace CLRNet {
@@ -95,6 +97,8 @@ private:
     void* AllocateFromHeap(size_t size);
     void LinkObject(GCObjectHeader* obj);
     void UnlinkObject(GCObjectHeader* obj);
+
+    friend class GarbageCollector;
 };
 
 // Statistics and monitoring
