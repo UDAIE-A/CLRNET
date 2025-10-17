@@ -76,6 +76,9 @@ Developers looking to target newer .NET APIs on Windows Phone 8.1 can follow the
 ### Track B — Userspace IL Engine
 Dynamic scenarios that rely on `Expression.Compile`, `DynamicMethod`, or other runtime codegen can now target the [Track B IL engine](docs/TRACK-B-USERSPACE-IL-ENGINE.md). The `CLRNet_VM_*` exports expose a sandboxed interpreter with bytecode caching, host-controlled syscalls, and call-site configuration so apps can compile IL once, persist the bytecode to `LocalCache/VmBytecode`, and execute under deterministic budgets without requiring the platform JIT.
 
+### Track C — Modern C# pipeline
+Leverage the [Track C build pipeline](docs/TRACK-C-MODERN-CS-PIPELINE.md) to compile with Roslyn `/langversion:latest`, automatically reference CLRNET's facade overlays, post-process assemblies with Mono.Cecil to retarget APIs, and optionally route `Expression.Compile()` through the Track B VM. The sample project in `examples/ModernCSharpPipeline` demonstrates records, ValueTask, JSON serialization, and VM-backed expressions working together on Windows Phone 8.1.
+
 ### Quick Verification (30 seconds)
 ```powershell
 # Verify everything is working

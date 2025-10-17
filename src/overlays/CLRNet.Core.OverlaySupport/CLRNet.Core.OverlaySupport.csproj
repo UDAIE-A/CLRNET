@@ -69,11 +69,13 @@
     <Compile Include="Async\AsyncEnumerable.cs" />
     <Compile Include="Buffers\ArrayPool.cs" />
     <Compile Include="Buffers\ArrayBufferWriter.cs" />
+    <Compile Include="Expressions\CLRNetExpressionCompiler.cs" />
     <Compile Include="Runtime\Unsafe.cs" />
     <Compile Include="Net\SafeHttpClientHandler.cs" />
     <Compile Include="IO\WinRtStorageExtensions.cs" />
     <Compile Include="Json\Utf8JsonPrimitives.cs" />
     <Compile Include="Json\JsonSerializer.cs" />
+    <Compile Include="Vm\VmExpressionCompiler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
 
