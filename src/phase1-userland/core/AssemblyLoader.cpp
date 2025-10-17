@@ -162,8 +162,8 @@ void LoadedAssembly::Unload() {
 
 bool LoadedAssembly::MapFile() {
     // Open file
-    m_fileHandle = CreateFile(m_path.c_str(), GENERIC_READ, FILE_SHARE_READ, 
-                              nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    m_fileHandle = CreateFileW(m_path.c_str(), GENERIC_READ, FILE_SHARE_READ,
+                               nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (m_fileHandle == INVALID_HANDLE_VALUE) {
         return false;
     }
@@ -178,7 +178,7 @@ bool LoadedAssembly::MapFile() {
     m_fileSize = static_cast<size_t>(fileSize.QuadPart);
     
     // Create file mapping
-    m_mappingHandle = CreateFileMapping(m_fileHandle, nullptr, PAGE_READONLY, 0, 0, nullptr);
+    m_mappingHandle = CreateFileMappingW(m_fileHandle, nullptr, PAGE_READONLY, 0, 0, nullptr);
     if (!m_mappingHandle) {
         CloseHandle(m_fileHandle);
         m_fileHandle = INVALID_HANDLE_VALUE;
@@ -755,8 +755,8 @@ std::string AssemblyLoader::ExtractAssemblyName(const std::wstring& path) {
 
 bool AssemblyLoader::IsValidPEFile(const std::wstring& path) {
     // Simple validation - check if file exists and has PE signature
-    HANDLE file = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ,
-                            nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    HANDLE file = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ,
+                              nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     
     if (file == INVALID_HANDLE_VALUE) {
         return false;

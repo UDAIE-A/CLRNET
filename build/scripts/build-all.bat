@@ -28,6 +28,9 @@ if not exist "%ProgramFiles(x86)%\Microsoft SDKs\WindowsPhoneApp\v8.1" (
     exit /b 1
 )
 
+:: Prefer Windows Phone 8.1 SDK headers/libs over newer Desktop kits
+call :ConfigureWp81Sdk "%ProgramFiles(x86)%\Microsoft SDKs\WindowsPhoneApp\v8.1"
+
 echo [INFO] Building CLRNet Runtime...
 echo [INFO] Configuration: %BUILD_CONFIG%
 echo [INFO] Platform: %BUILD_PLATFORM%

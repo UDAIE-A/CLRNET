@@ -12,12 +12,10 @@
 #include <vector>
 #include <unordered_map>
 
+#include "RuntimeTypes.h"
+
 namespace CLRNet {
 namespace Phase1 {
-
-// Forward declarations
-struct ObjectHeader;
-struct MethodDesc;
 
 // Method table flags
 enum MethodTableFlags : DWORD {
