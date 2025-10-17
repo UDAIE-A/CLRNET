@@ -252,30 +252,6 @@ echo Your modern .NET runtime binaries are ready for deployment.
 echo.
 goto :end
 
-:ConfigureWp81Sdk
-set "SDK_ROOT=%~1"
-if "%SDK_ROOT%"=="" goto configure_done
-if not exist "%SDK_ROOT%" goto configure_done
-
-echo [INFO] Using Windows Phone 8.1 SDK at %SDK_ROOT%
-
-set "SDK_INCLUDE_ARM=%SDK_ROOT%\Include\marm"
-set "SDK_INCLUDE_SHARED=%SDK_ROOT%\Include"
-set "SDK_INCLUDE_CRT=%SDK_INCLUDE_ARM%\crt"
-set "SDK_LIB_ARM=%SDK_ROOT%\Lib\ARM"
-set "SDK_LIB_WIN81=%SDK_ROOT%\Lib\winv6.3\um\ARM"
-set "SDK_BIN=%SDK_ROOT%\bin"
-set "SDK_REF=%SDK_ROOT%\References\CommonConfiguration\Neutral"
-
-if exist "%SDK_INCLUDE_CRT%" set "INCLUDE=%SDK_INCLUDE_CRT%;%SDK_INCLUDE_ARM%;%SDK_INCLUDE_SHARED%;%INCLUDE%"
-if exist "%SDK_LIB_ARM%" set "LIB=%SDK_LIB_ARM%;%SDK_LIB_WIN81%;%LIB%"
-if exist "%SDK_BIN%" set "PATH=%SDK_BIN%;%PATH%"
-if exist "%SDK_ROOT%" set "WindowsSdkDir=%SDK_ROOT%\"
-if exist "%SDK_REF%" set "WindowsPhoneReferencePath=%SDK_REF%"
-
-:configure_done
-goto :eof
-
 :CollectSources
 setlocal EnableDelayedExpansion
 set OUTPUT_VAR=%~1

@@ -7,7 +7,6 @@
 #include <cstdio>
 #include <locale>
 #include <cstdlib>
-#include <vector>
 
 #include <windows.h>
 
@@ -289,20 +288,9 @@ std::wstring Utf8ToWide(const std::string& value) {
         return L"";
     }
 
-    std::vector<wchar_t> buffer(static_cast<size_t>(requiredLength));
-    int written = MultiByteToWideChar(
-        CP_UTF8,
-        0,
-        value.c_str(),
-        static_cast<int>(value.size()),
-        buffer.data(),
-        requiredLength
-    );
-    if (written <= 0) {
-        return L"";
-    }
-
-    return std::wstring(buffer.data(), static_cast<size_t>(written));
+    std::wstring wide(static_cast<size_t>(requiredLength), L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, value.c_str(), static_cast<int>(value.size()), wide.data(), requiredLength);
+    return wide;
 }
 
 std::string WideToUtf8(const std::wstring& value) {
@@ -310,36 +298,14 @@ std::string WideToUtf8(const std::wstring& value) {
         return std::string();
     }
 
-    int requiredLength = WideCharToMultiByte(
-        CP_UTF8,
-        0,
-        value.c_str(),
-        static_cast<int>(value.size()),
-        nullptr,
-        0,
-        nullptr,
-        nullptr
-    );
+    int requiredLength = WideCharToMultiByte(CP_UTF8, 0, value.c_str(), static_cast<int>(value.size()), nullptr, 0, nullptr, nullptr);
     if (requiredLength <= 0) {
         return std::string();
     }
 
-    std::vector<char> buffer(static_cast<size_t>(requiredLength));
-    int written = WideCharToMultiByte(
-        CP_UTF8,
-        0,
-        value.c_str(),
-        static_cast<int>(value.size()),
-        buffer.data(),
-        requiredLength,
-        nullptr,
-        nullptr
-    );
-    if (written <= 0) {
-        return std::string();
-    }
-
-    return std::string(buffer.data(), static_cast<size_t>(written));
+    std::string narrow(static_cast<size_t>(requiredLength), '\0');
+    WideCharToMultiByte(CP_UTF8, 0, value.c_str(), static_cast<int>(value.size()), narrow.data(), requiredLength, nullptr, nullptr);
+    return narrow;
 }
 
 } // namespace Phase1
