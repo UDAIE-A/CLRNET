@@ -82,6 +82,9 @@ Leverage the [Track C build pipeline](docs/TRACK-C-MODERN-CS-PIPELINE.md) to com
 ### End-to-end integration playbook
 When starting a new app (or upgrading an existing one), follow the [CLRNET Application Integration Playbook](docs/CLRNET_APP_INTEGRATION_PLAYBOOK.md) for a stage-by-stage checklist that stitches Tracks A–C together—covering build configuration, IL post-processing, overlay packaging, VM warm-up, and on-device verification.
 
+### Executive comparison snapshot
+Need to brief stakeholders quickly? Share the [CLRNET vs. Windows Phone 8.1 overview](docs/CLRNET_VS_WP81_OVERVIEW.md) for a plain-language summary and capability coverage table.
+
 ### Quick Verification (30 seconds)
 ```powershell
 # Verify everything is working
