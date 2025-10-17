@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <CLRNETRoot>$(MSBuildThisFileDirectory)..\..\</CLRNETRoot>
+    <CLRNET_AddOverlayFacades>true</CLRNET_AddOverlayFacades>
+  </PropertyGroup>
+
+  <Target Name="CLRNet_RunIlPostPass" AfterTargets="Build">
+    <Message Text="Running CLRNET IL post-pass" Importance="high" />
+    <Exec Command="dotnet run --project $(CLRNETRoot)tools/modern-pipeline/CLRNet.ModernCSharpPipeline/CLRNet.ModernCSharpPipeline.csproj -- --input &quot;$(TargetPath)&quot; --embed-json ModernApp.Settings=appsettings.json --verbose" />
+  </Target>
+</Project>
