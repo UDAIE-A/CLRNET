@@ -1,345 +1,282 @@
-// CLRNet Runtime Host - Main Entry Point for CLR Runtime
-// This executable hosts the modern .NET runtime for Windows Phone 8.1
+#include "runtime/ScriptRuntime.h"
 
-#include <windows.h>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include <string>
+#include <string_view>
+#include <unordered_map>
 #include <vector>
 
-// CLRNet Core Runtime Headers
-#ifdef CLRNET_CORE_AVAILABLE
-#include "../phase1-userland/core/CoreExecutionEngine.h"
-#include "../phase1-userland/core/TypeSystem.h"
-#include "../phase1-userland/core/GarbageCollector.h"
-#include "../phase1-userland/core/AssemblyLoader.h"
-#include "../phase1-userland/core/SimpleJIT.h"
-#endif
+namespace fs = std::filesystem;
 
-// CLRNet Interop Headers  
-#ifdef CLRNET_INTEROP_AVAILABLE
-#include "../interop/InteropManager.h"
-#include "../interop/winrt/WinRTBridge.h"
-#include "../interop/hardware/HardwareAccess.h"
-#endif
+namespace {
 
-// CLRNet System Headers
-#ifdef CLRNET_SYSTEM_AVAILABLE
-#include "../system/replacement/CLRReplacementEngine.h"
-#include "../system/hooks/DeepSystemHooks.h"
-#include "../system/compatibility/CompatibilityShim.h"
-#endif
+void print_banner() {
+    std::cout << "CLRNet Script Host" << '\n'
+              << "==================" << '\n';
+}
 
-using namespace std;
+void print_usage() {
+    std::cout << "Usage:\n"
+              << "  clrnet run <script> [--dry-run] [--quiet] [--no-banner] [--set key=value]\n"
+              << "  clrnet explain <script>\n"
+              << "  clrnet init <path>\n"
+              << '\n'
+              << "Commands:\n"
+              << "  run       Execute a script file.\n"
+              << "  explain   Print a human-readable summary of a script.\n"
+              << "  init      Generate a starter script at the given path.\n";
+}
 
-// Forward declarations
-int InitializeRuntime();
-int ExecuteAssembly(const wstring& assemblyPath);
-void DisplayRuntimeInfo();
-void DisplayUsage();
-void DisplayStartupBanner();
+std::vector<std::string> collect_arguments(int argc, char* argv[]) {
+    std::vector<std::string> args;
+    args.reserve(static_cast<std::size_t>(argc));
+    for (int index = 1; index < argc; ++index) {
+        args.emplace_back(argv[index]);
+    }
+    return args;
+}
 
-// Global runtime components
-#ifdef CLRNET_CORE_AVAILABLE
-using namespace CLRNet::Core;
-static unique_ptr<CoreExecutionEngine> g_executionEngine;
-static unique_ptr<TypeSystem> g_typeSystem;
-static unique_ptr<GarbageCollector> g_garbageCollector;
-static unique_ptr<AssemblyLoader> g_assemblyLoader;
-static unique_ptr<SimpleJIT> g_jitCompiler;
-#endif
+std::string script_display_name(const clrnet::ScriptRuntime& runtime) {
+    const auto& metadata = runtime.metadata();
+    if (const auto it = metadata.find("name"); it != metadata.end()) {
+        return it->second;
+    }
+    return runtime.script_path().filename().string();
+}
 
-int wmain(int argc, wchar_t* argv[])
-{
-    DisplayStartupBanner();
-
-    // Parse command line arguments
-    if (argc < 2) {
-        DisplayUsage();
+int handle_run(const std::vector<std::string>& args) {
+    if (args.empty()) {
+        print_usage();
         return 1;
     }
 
-    wstring command = argv[1];
+    std::string script_path;
+    bool dry_run = false;
+    bool quiet = false;
+    bool show_banner = true;
+    std::unordered_map<std::string, std::string> overrides;
 
-    if (command == L"--info" || command == L"-i") {
-        DisplayRuntimeInfo();
-        return 0;
-    }
-    else if (command == L"--help" || command == L"-h") {
-        DisplayUsage();
-        return 0;
-    }
-    else if (command == L"--execute" || command == L"-e") {
-        if (argc < 3) {
-            wcout << L"[ERROR] No assembly specified for execution" << endl;
+    for (std::size_t index = 0; index < args.size(); ++index) {
+        const auto& argument = args[index];
+        if (!argument.empty() && argument[0] == '-') {
+            if (argument == "--dry-run") {
+                dry_run = true;
+            } else if (argument == "--quiet") {
+                quiet = true;
+            } else if (argument == "--no-banner") {
+                show_banner = false;
+            } else if (argument == "--set") {
+                if (index + 1 >= args.size()) {
+                    std::cerr << "--set requires a key=value pair" << '\n';
+                    return 1;
+                }
+                const auto& pair = args[++index];
+                const auto equals = pair.find('=');
+                if (equals == std::string::npos) {
+                    std::cerr << "--set expects a key=value pair" << '\n';
+                    return 1;
+                }
+                const std::string key = pair.substr(0, equals);
+                const std::string value = pair.substr(equals + 1);
+                overrides[key] = value;
+            } else if (argument.rfind("--set=", 0) == 0) {
+                const std::string pair = argument.substr(6);
+                const auto equals = pair.find('=');
+                if (equals == std::string::npos) {
+                    std::cerr << "--set expects a key=value pair" << '\n';
+                    return 1;
+                }
+                const std::string key = pair.substr(0, equals);
+                const std::string value = pair.substr(equals + 1);
+                overrides[key] = value;
+            } else if (argument == "--help" || argument == "-h") {
+                print_usage();
+                return 0;
+            } else {
+                std::cerr << "Unknown option: " << argument << '\n';
+                return 1;
+            }
+        } else if (script_path.empty()) {
+            script_path = argument;
+        } else {
+            std::cerr << "Unexpected argument: " << argument << '\n';
             return 1;
         }
-
-        // Initialize runtime
-        if (InitializeRuntime() != 0) {
-            wcout << L"[ERROR] Failed to initialize CLRNet runtime" << endl;
-            return 1;
-        }
-
-        // Execute specified assembly
-        wstring assemblyPath = argv[2];
-        return ExecuteAssembly(assemblyPath);
     }
-    else {
-        wcout << L"[ERROR] Unknown command: " << command << endl;
-        DisplayUsage();
+
+    if (script_path.empty()) {
+        std::cerr << "No script specified." << '\n';
         return 1;
     }
-}
 
-void DisplayStartupBanner()
-{
-    wcout << L"===============================================" << endl;
-    wcout << L"       CLRNet Runtime Host v1.0.0             " << endl;
-    wcout << L"   Modern .NET Runtime for Windows Phone 8.1  " << endl;
-    wcout << L"===============================================" << endl;
-    wcout << endl;
-}
-
-void DisplayUsage()
-{
-    wcout << L"Usage: CLRNetHost.exe [command] [options]" << endl;
-    wcout << endl;
-    wcout << L"Commands:" << endl;
-    wcout << L"  --execute, -e <assembly>  Execute a .NET assembly" << endl;
-    wcout << L"  --info, -i               Display runtime information" << endl;
-    wcout << L"  --help, -h               Display this help message" << endl;
-    wcout << endl;
-    wcout << L"Examples:" << endl;
-    wcout << L"  CLRNetHost.exe -e MyApp.exe" << endl;
-    wcout << L"  CLRNetHost.exe -i" << endl;
-    wcout << endl;
-}
-
-void DisplayRuntimeInfo()
-{
-    wcout << L"CLRNet Runtime Information:" << endl;
-    wcout << L"===========================" << endl;
-    wcout << endl;
-
-#ifdef CLRNET_CORE_AVAILABLE
-    wcout << L"Core Runtime:     AVAILABLE" << endl;
-    wcout << L"- Execution Engine: Yes" << endl;
-    wcout << L"- Type System:      Yes" << endl;
-    wcout << L"- Garbage Collector: Yes" << endl;
-    wcout << L"- Assembly Loader:  Yes" << endl;
-    wcout << L"- JIT Compiler:     Yes" << endl;
-#else
-    wcout << L"Core Runtime:     NOT AVAILABLE" << endl;
-#endif
-
-#ifdef CLRNET_INTEROP_AVAILABLE
-    wcout << L"System Interop:   AVAILABLE" << endl;
-    wcout << L"- WinRT Bridge:     Yes" << endl;
-    wcout << L"- Hardware Access:  Yes" << endl;
-    wcout << L"- P/Invoke Engine:  Yes" << endl;
-#else
-    wcout << L"System Interop:   NOT AVAILABLE" << endl;
-#endif
-
-#ifdef CLRNET_SYSTEM_AVAILABLE
-    wcout << L"System Integration: AVAILABLE" << endl;
-    wcout << L"- CLR Replacement:  Yes" << endl;
-    wcout << L"- System Hooks:     Yes" << endl;
-    wcout << L"- Compatibility:    Yes" << endl;
-#else
-    wcout << L"System Integration: NOT AVAILABLE" << endl;
-#endif
-
-    wcout << endl;
-    wcout << L"Runtime Features:" << endl;
-    wcout << L"- Target Platform:  Windows Phone 8.1 ARM" << endl;
-    wcout << L"- Runtime Version:  1.0.0" << endl;
-    wcout << L"- Build Date:       " << __DATE__ << L" " << __TIME__ << endl;
-    wcout << L"- Architecture:     " << 
-#ifdef _M_ARM
-        L"ARM"
-#elif defined(_M_X64)
-        L"x64"
-#elif defined(_M_IX86)  
-        L"x86"
-#else
-        L"Unknown"
-#endif
-        << endl;
-
-    wcout << endl;
-    wcout << L"Performance Characteristics:" << endl;
-    wcout << L"- Startup Time:     <200ms (vs 500ms+ legacy CLR)" << endl;
-    wcout << L"- Memory Usage:     ~15MB base (vs 25MB+ legacy CLR)" << endl;
-    wcout << L"- JIT Performance:  50+ methods/sec (vs 20-30 legacy CLR)" << endl;
-    wcout << L"- GC Pause Times:   <5ms (vs 10ms+ legacy CLR)" << endl;
-    wcout << endl;
-}
-
-int InitializeRuntime()
-{
-    wcout << L"[INFO] Initializing CLRNet Runtime..." << endl;
-
-#ifdef CLRNET_CORE_AVAILABLE
-    try {
-        // Initialize Core Execution Engine
-        wcout << L"[INIT] Core Execution Engine..." << endl;
-        g_executionEngine = make_unique<CoreExecutionEngine>();
-        if (!g_executionEngine->Initialize()) {
-            wcout << L"[ERROR] Failed to initialize Core Execution Engine" << endl;
-            return 1;
-        }
-
-        // Initialize Type System
-        wcout << L"[INIT] Type System..." << endl;
-        g_typeSystem = make_unique<TypeSystem>();
-        if (!g_typeSystem->Initialize()) {
-            wcout << L"[ERROR] Failed to initialize Type System" << endl;
-            return 1;
-        }
-
-        // Initialize Garbage Collector
-        wcout << L"[INIT] Garbage Collector..." << endl;
-        g_garbageCollector = make_unique<GarbageCollector>();
-        if (!g_garbageCollector->Initialize()) {
-            wcout << L"[ERROR] Failed to initialize Garbage Collector" << endl;
-            return 1;
-        }
-
-        // Initialize Assembly Loader
-        wcout << L"[INIT] Assembly Loader..." << endl;
-        g_assemblyLoader = make_unique<AssemblyLoader>(g_typeSystem.get());
-        if (!g_assemblyLoader->Initialize()) {
-            wcout << L"[ERROR] Failed to initialize Assembly Loader" << endl;
-            return 1;
-        }
-
-        g_assemblyLoader->RefreshOverlayConfiguration();
-
-        // Initialize JIT Compiler
-        wcout << L"[INIT] JIT Compiler..." << endl;
-        g_jitCompiler = make_unique<SimpleJIT>();
-        if (!g_jitCompiler->Initialize()) {
-            wcout << L"[ERROR] Failed to initialize JIT Compiler" << endl;
-            return 1;
-        }
-
-        wcout << L"[SUCCESS] Core runtime initialized successfully" << endl;
-    }
-    catch (const exception& e) {
-        wcout << L"[ERROR] Exception during runtime initialization: " << e.what() << endl;
+    const fs::path path(script_path);
+    if (!fs::exists(path)) {
+        std::cerr << "Script not found: " << path << '\n';
         return 1;
     }
-#else
-    wcout << L"[WARNING] Core runtime not available in this build" << endl;
-#endif
 
-#ifdef CLRNET_INTEROP_AVAILABLE
-    try {
-        wcout << L"[INIT] System interop layer..." << endl;
-        // Initialize interop components here
-        wcout << L"[SUCCESS] Interop layer initialized" << endl;
+    clrnet::ScriptRuntime runtime;
+    std::string error;
+    if (!runtime.load_from_file(path, error)) {
+        std::cerr << error << '\n';
+        return 2;
     }
-    catch (const exception& e) {
-        wcout << L"[WARNING] Interop initialization failed: " << e.what() << endl;
-    }
-#endif
 
-#ifdef CLRNET_SYSTEM_AVAILABLE
-    try {
-        wcout << L"[INIT] System integration layer..." << endl;
-        // Initialize system integration components here  
-        wcout << L"[SUCCESS] System integration initialized" << endl;
+    if (show_banner && !quiet) {
+        print_banner();
+        std::cout << "Running script: " << script_display_name(runtime);
+        if (dry_run) {
+            std::cout << " (dry run)";
+        }
+        std::cout << '\n' << '\n';
     }
-    catch (const exception& e) {
-        wcout << L"[WARNING] System integration initialization failed: " << e.what() << endl;
-    }
-#endif
 
-    wcout << L"[SUCCESS] CLRNet Runtime initialization complete!" << endl;
-    wcout << endl;
+    if (!quiet && !overrides.empty()) {
+        std::cout << "Overrides:" << '\n';
+        for (const auto& [key, value] : overrides) {
+            std::cout << "  " << key << " = " << value << '\n';
+        }
+        std::cout << '\n';
+    }
+
+    clrnet::ScriptRuntime::ExecutionOptions options;
+    options.dry_run = dry_run;
+    options.quiet = quiet;
+    options.output = quiet ? nullptr : &std::cout;
+    options.initial_state = std::move(overrides);
+
+    const auto report = runtime.execute(options);
+    if (!report.success) {
+        std::cerr << "Script failed: " << report.error_message << '\n';
+        return 3;
+    }
+
+    if (!quiet) {
+        std::cout << '\n' << "Completed " << report.commands_executed << " command";
+        if (report.commands_executed != 1) {
+            std::cout << 's';
+        }
+        std::cout << "." << '\n';
+    }
+
     return 0;
 }
 
-int ExecuteAssembly(const wstring& assemblyPath)
-{
-    wcout << L"[EXEC] Loading assembly: " << assemblyPath << endl;
-
-#ifdef CLRNET_CORE_AVAILABLE
-    if (!g_assemblyLoader || !g_executionEngine) {
-        wcout << L"[ERROR] Runtime not properly initialized" << endl;
+int handle_explain(const std::vector<std::string>& args) {
+    if (args.size() != 1) {
+        std::cerr << "Usage: clrnet explain <script>" << '\n';
         return 1;
     }
 
-    try {
-        // Load the assembly
-        wcout << L"[LOAD] Loading assembly..." << endl;
-        auto assembly = g_assemblyLoader->LoadAssembly(assemblyPath);
-        if (!assembly.IsValid()) {
-            wcout << L"[ERROR] Failed to load assembly: " << assemblyPath << endl;
-            return 1;
-        }
-
-        wcout << L"[SUCCESS] Assembly loaded successfully" << endl;
-        wcout << L"[INFO] Assembly: " << assembly.GetName() << endl;
-        wcout << L"[INFO] Version: " << assembly.GetVersion() << endl;
-
-        // Find entry point
-        wcout << L"[ENTRY] Locating entry point..." << endl;
-        auto entryPoint = assembly.GetEntryPoint();
-        if (!entryPoint.IsValid()) {
-            wcout << L"[ERROR] No entry point found in assembly" << endl;
-            return 1;
-        }
-
-        wcout << L"[SUCCESS] Entry point found: " << entryPoint.GetName() << endl;
-
-        // Execute entry point
-        wcout << L"[EXEC] Executing assembly..." << endl;
-        wcout << L"===============================================" << endl;
-
-        int result = g_executionEngine->ExecuteMethod(entryPoint);
-
-        wcout << L"===============================================" << endl;
-        wcout << L"[COMPLETE] Assembly execution finished with exit code: " << result << endl;
-
-        // Display runtime statistics
-        auto stats = g_executionEngine->GetRuntimeStatistics();
-        wcout << endl;
-        wcout << L"Runtime Statistics:" << endl;
-        wcout << L"- Methods compiled: " << stats.methodsCompiled << endl;
-        wcout << L"- Memory allocated: " << stats.totalMemoryAllocated << L" bytes" << endl;
-        wcout << L"- GC collections: " << stats.gcCollections << endl;
-        wcout << L"- Execution time: " << stats.executionTimeMs << L" ms" << endl;
-
-        return result;
-    }
-    catch (const exception& e) {
-        wcout << L"[ERROR] Exception during assembly execution: " << e.what() << endl;
+    const fs::path path(args.front());
+    if (!fs::exists(path)) {
+        std::cerr << "Script not found: " << path << '\n';
         return 1;
     }
-#else
-    wcout << L"[ERROR] Core runtime not available - cannot execute assemblies" << endl;
-    wcout << L"[INFO] This build of CLRNet only supports runtime information display" << endl;
+
+    clrnet::ScriptRuntime runtime;
+    std::string error;
+    if (!runtime.load_from_file(path, error)) {
+        std::cerr << error << '\n';
+        return 2;
+    }
+
+    std::cout << "Script: " << script_display_name(runtime) << '\n';
+    for (const auto& [key, value] : runtime.metadata()) {
+        std::cout << "  @" << key << " = " << value << '\n';
+    }
+
+    std::cout << '\n' << "Commands:" << '\n';
+    for (const auto& command : runtime.commands()) {
+        std::cout << "  - " << runtime.describe_command(command) << '\n';
+    }
+
+    return 0;
+}
+
+std::string sample_script_contents() {
+    return R"(# Sample CLRNet script
+@name Hello CLRNet
+@greeting Hello from CLRNet!
+print ${greeting}
+append greeting Running simple automation steps.
+print ${greeting}
+sleep 250
+print Done!
+)";
+}
+
+int handle_init(const std::vector<std::string>& args) {
+    if (args.size() != 1) {
+        std::cerr << "Usage: clrnet init <path>" << '\n';
+        return 1;
+    }
+
+    fs::path target(args.front());
+    fs::path output_path;
+
+    if (!target.has_extension()) {
+        if (!fs::exists(target)) {
+            fs::create_directories(target);
+        }
+        output_path = target / "hello.clr";
+    } else {
+        if (auto parent = target.parent_path(); !parent.empty()) {
+            fs::create_directories(parent);
+        }
+        output_path = target;
+    }
+
+    if (fs::exists(output_path)) {
+        std::cerr << "File already exists: " << output_path << '\n';
+        return 1;
+    }
+
+    std::ofstream stream(output_path);
+    if (!stream) {
+        std::cerr << "Unable to write file: " << output_path << '\n';
+        return 1;
+    }
+    stream << sample_script_contents();
+
+    std::cout << "Created sample script at " << output_path << '\n';
+    std::cout << "Run it with: clrnet run " << output_path << '\n';
+    return 0;
+}
+
+}  // namespace
+
+int main(int argc, char* argv[]) {
+    const auto args = collect_arguments(argc, argv);
+    if (args.empty()) {
+        print_usage();
+        return 1;
+    }
+
+    const std::string& command = args.front();
+    const std::vector<std::string> command_args(args.begin() + 1, args.end());
+
+    if (command == "run") {
+        return handle_run(command_args);
+    }
+
+    if (command == "explain") {
+        return handle_explain(command_args);
+    }
+
+    if (command == "init") {
+        return handle_init(command_args);
+    }
+
+    if (command == "--help" || command == "-h" || command == "help") {
+        print_usage();
+        return 0;
+    }
+
+    std::cerr << "Unknown command: " << command << '\n';
+    print_usage();
     return 1;
-#endif
 }
-
-// Entry point for DLL builds (if needed)
-#ifdef _USRDLL
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
-{
-    switch (ul_reason_for_call)
-    {
-    case DLL_PROCESS_ATTACH:
-        break;
-    case DLL_THREAD_ATTACH:
-        break;
-    case DLL_THREAD_DETACH:
-        break;
-    case DLL_PROCESS_DETACH:
-        break;
-    }
-    return TRUE;
-}
-#endif
