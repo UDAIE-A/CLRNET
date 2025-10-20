@@ -1,0 +1,10 @@
+# Build output
+/out/
+/build/
+CMakeCache.txt
+CMakeFiles/
+cmake-build-*/
+
+# Generated scripts and logs
+*.log
+*.cache
