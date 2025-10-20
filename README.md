@@ -15,8 +15,6 @@ language with commands such as `set`, `print`, and `sleep`.
   executing a script.
 * **Safe dry runs** – execute scripts without waiting for `sleep` commands to
   finish.
-* **Runtime customization** – override variables on the command line with
-  `--set key=value`.
 
 ## Getting started
 
@@ -28,11 +26,6 @@ language with commands such as `set`, `print`, and `sleep`.
 2. Execute the bundled example script:
    ```bash
    ./out/build/clrnet run examples/scripts/hello.clr
-   ```
-   Provide overrides for metadata or previously assigned variables using
-   `--set`:
-   ```bash
-   ./out/build/clrnet run examples/scripts/hello.clr --set greeting="Hi from the CLI"
    ```
 3. Preview what a script will do:
    ```bash
@@ -52,7 +45,7 @@ interpolation. Run with `--dry-run` to skip actual pauses.
 
 | Command | Description |
 | --- | --- |
-| `run <script> [--dry-run] [--quiet] [--no-banner] [--set key=value]` | Execute the specified script. Multiple `--set` options may be provided. |
+| `run <script> [--dry-run] [--quiet] [--no-banner]` | Execute the specified script. |
 | `explain <script>` | Print a human-readable summary of metadata and commands. |
 | `init <path>` | Create a sample script in the provided location. |
 
@@ -61,11 +54,9 @@ reference.
 
 ## Writing scripts
 
-Scripts are plain-text files. Lines beginning with `@` set metadata (which is
-also exposed as the initial runtime state) and lines starting with `#` are
-comments. The runtime exposes metadata and variables using `${name}`
-placeholders that are expanded at execution time. Metadata entries provide
-convenient defaults that can be overridden from the CLI with `--set`.
+Scripts are plain-text files. Lines beginning with `@` set metadata and lines
+starting with `#` are comments. The runtime exposes metadata and variables using
+`${name}` placeholders that are expanded at execution time.
 
 A minimal script:
 

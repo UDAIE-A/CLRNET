@@ -19,6 +19,12 @@ bool is_space(char ch) {
 }  // namespace
 
 bool ScriptRuntime::load_from_file(const std::filesystem::path& path, std::string& error_message) {
+    error_message.clear();
+    commands_.clear();
+    metadata_.clear();
+
+    script_path_ = std::filesystem::weakly_canonical(path);
+
     std::ifstream stream(path);
     if (!stream) {
         error_message = "Unable to open script file: " + path.string();
@@ -27,32 +33,17 @@ bool ScriptRuntime::load_from_file(const std::filesystem::path& path, std::strin
 
     std::ostringstream buffer;
     buffer << stream.rdbuf();
-    const auto canonical = std::filesystem::weakly_canonical(path);
-    return load_from_string(canonical, buffer.str(), error_message);
-}
-
-bool ScriptRuntime::load_from_string(const std::filesystem::path& virtual_path, const std::string& contents,
-                                     std::string& error_message) {
-    error_message.clear();
-    commands_.clear();
-    metadata_.clear();
-
-    script_path_ = virtual_path;
 
     metadata_["script.path"] = script_path_.string();
     metadata_["script.directory"] = script_path_.parent_path().string();
     metadata_["script.name"] = script_path_.stem().string();
 
-    return parse_contents(contents, error_message);
+    return parse_contents(buffer.str(), error_message);
 }
 
 ScriptRuntime::ExecutionReport ScriptRuntime::execute(ExecutionOptions options) const {
     ExecutionReport report;
     std::unordered_map<std::string, std::string> state = metadata_;
-    for (const auto& [key, value] : options.initial_state) {
-        state[key] = value;
-        report.log.push_back("inject " + key + " = " + value);
-    }
 
     std::ostream* output_stream = options.output ? options.output : &std::cout;
 

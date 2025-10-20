@@ -12,12 +12,6 @@ cmake --build out/build
 ./out/build/clrnet run examples/scripts/hello.clr
 ```
 
-Supply overrides without editing the script using the `--set` flag:
-
-```bash
-./out/build/clrnet run examples/scripts/hello.clr --set greeting="Hello from overrides"
-```
-
 Use `clrnet explain` to preview what a script will do before executing it:
 
 ```bash

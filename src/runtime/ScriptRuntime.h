@@ -33,7 +33,6 @@ public:
         bool dry_run{false};
         bool quiet{false};
         std::ostream* output{nullptr};
-        std::unordered_map<std::string, std::string> initial_state;
     };
 
     struct ExecutionReport {
@@ -45,8 +44,6 @@ public:
     };
 
     bool load_from_file(const std::filesystem::path& path, std::string& error_message);
-    bool load_from_string(const std::filesystem::path& virtual_path, const std::string& contents,
-                          std::string& error_message);
 
     [[nodiscard]] const std::filesystem::path& script_path() const noexcept { return script_path_; }
     [[nodiscard]] const std::unordered_map<std::string, std::string>& metadata() const noexcept { return metadata_; }

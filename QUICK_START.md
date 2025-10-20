@@ -14,10 +14,6 @@ Follow these steps to build the CLI and run your first script:
    ```bash
    ./out/build/clrnet run examples/scripts/hello.clr --dry-run
    ```
-   Override variables (metadata or previously defined values) on the command line using `--set`:
-   ```bash
-   ./out/build/clrnet run examples/scripts/hello.clr --dry-run --set greeting="Hi from the CLI"
-   ```
 4. Explain the script to see each step:
    ```bash
    ./out/build/clrnet explain examples/scripts/hello.clr

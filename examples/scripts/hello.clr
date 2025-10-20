@@ -1,6 +1,6 @@
 # Simple CLRNet example
 @name Hello CLRNet
-@greeting Hello from CLRNet!
+set greeting Hello from CLRNet!
 print ${greeting}
 append greeting This runtime focuses on simple automation-friendly scripts.
 print ${greeting}

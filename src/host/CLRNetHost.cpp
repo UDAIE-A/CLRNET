@@ -6,7 +6,6 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <vector>
 
 namespace fs = std::filesystem;
@@ -20,7 +19,7 @@ void print_banner() {
 
 void print_usage() {
     std::cout << "Usage:\n"
-              << "  clrnet run <script> [--dry-run] [--quiet] [--no-banner] [--set key=value]\n"
+              << "  clrnet run <script> [--dry-run] [--quiet] [--no-banner]\n"
               << "  clrnet explain <script>\n"
               << "  clrnet init <path>\n"
               << '\n'
@@ -57,10 +56,8 @@ int handle_run(const std::vector<std::string>& args) {
     bool dry_run = false;
     bool quiet = false;
     bool show_banner = true;
-    std::unordered_map<std::string, std::string> overrides;
 
-    for (std::size_t index = 0; index < args.size(); ++index) {
-        const auto& argument = args[index];
+    for (const auto& argument : args) {
         if (!argument.empty() && argument[0] == '-') {
             if (argument == "--dry-run") {
                 dry_run = true;
@@ -68,30 +65,6 @@ int handle_run(const std::vector<std::string>& args) {
                 quiet = true;
             } else if (argument == "--no-banner") {
                 show_banner = false;
-            } else if (argument == "--set") {
-                if (index + 1 >= args.size()) {
-                    std::cerr << "--set requires a key=value pair" << '\n';
-                    return 1;
-                }
-                const auto& pair = args[++index];
-                const auto equals = pair.find('=');
-                if (equals == std::string::npos) {
-                    std::cerr << "--set expects a key=value pair" << '\n';
-                    return 1;
-                }
-                const std::string key = pair.substr(0, equals);
-                const std::string value = pair.substr(equals + 1);
-                overrides[key] = value;
-            } else if (argument.rfind("--set=", 0) == 0) {
-                const std::string pair = argument.substr(6);
-                const auto equals = pair.find('=');
-                if (equals == std::string::npos) {
-                    std::cerr << "--set expects a key=value pair" << '\n';
-                    return 1;
-                }
-                const std::string key = pair.substr(0, equals);
-                const std::string value = pair.substr(equals + 1);
-                overrides[key] = value;
             } else if (argument == "--help" || argument == "-h") {
                 print_usage();
                 return 0;
@@ -134,19 +107,10 @@ int handle_run(const std::vector<std::string>& args) {
         std::cout << '\n' << '\n';
     }
 
-    if (!quiet && !overrides.empty()) {
-        std::cout << "Overrides:" << '\n';
-        for (const auto& [key, value] : overrides) {
-            std::cout << "  " << key << " = " << value << '\n';
-        }
-        std::cout << '\n';
-    }
-
     clrnet::ScriptRuntime::ExecutionOptions options;
     options.dry_run = dry_run;
     options.quiet = quiet;
     options.output = quiet ? nullptr : &std::cout;
-    options.initial_state = std::move(overrides);
 
     const auto report = runtime.execute(options);
     if (!report.success) {
@@ -200,7 +164,7 @@ int handle_explain(const std::vector<std::string>& args) {
 std::string sample_script_contents() {
     return R"(# Sample CLRNet script
 @name Hello CLRNet
-@greeting Hello from CLRNet!
+set greeting Hello from CLRNet!
 print ${greeting}
 append greeting Running simple automation steps.
 print ${greeting}

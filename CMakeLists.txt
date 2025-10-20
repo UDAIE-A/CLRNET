@@ -31,10 +31,4 @@ if(BUILD_TESTING)
         NAME clrnet_hello_dry_run
         COMMAND clrnet run ${CMAKE_SOURCE_DIR}/examples/scripts/hello.clr --dry-run --quiet
     )
-
-    add_test(
-        NAME clrnet_override_variable
-        COMMAND clrnet run ${CMAKE_SOURCE_DIR}/examples/scripts/hello.clr --dry-run --no-banner --set greeting=Hi_from_CTest
-    )
-    set_tests_properties(clrnet_override_variable PROPERTIES PASS_REGULAR_EXPRESSION "Hi_from_CTest")
 endif()

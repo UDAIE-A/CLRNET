@@ -10,10 +10,6 @@ Metadata entries are optional and stored before execution as initial variables.
 They use the `@` prefix. All metadata is available to commands via variable
 substitution (`${key}`).
 
-Values provided with the CLI `--set key=value` flag override metadata entries
-and previously assigned variables before the first command runs. This makes it
-easy to keep scripts generic while still customizing them per run.
-
 Common metadata keys:
 
 | Key | Purpose |
@@ -75,5 +71,3 @@ print ${greeting}
   for CI pipelines.
 * Combine `set` and `append` to build larger blocks of text before writing them
   to the console or another destination.
-* Pass `--set key=value` to the CLI to supply per-run configuration values
-  without editing the script file.
