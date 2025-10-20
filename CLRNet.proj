@@ -62,19 +62,23 @@
   <!-- Project References -->
   <ItemGroup>
     <ProjectReference Include="src\CLRNetCore\CLRNetCore.vcxproj">
-      <Project>{12345678-1234-5678-9012-123456789012}</Project>
+      <Project>{8F4C5A55-2F4B-4C40-8A64-6B501B28B42C}</Project>
       <Name>CLRNetCore</Name>
     </ProjectReference>
     <ProjectReference Include="src\CLRNetInterop\CLRNetInterop.vcxproj">
-      <Project>{12345678-1234-5678-9012-123456789013}</Project>
+      <Project>{AF9323CB-8F8C-4D9F-9E1F-349437DD9C10}</Project>
       <Name>CLRNetInterop</Name>
     </ProjectReference>
     <ProjectReference Include="src\CLRNetSystem\CLRNetSystem.vcxproj">
-      <Project>{12345678-1234-5678-9012-123456789014}</Project>
+      <Project>{6E8E9D3E-8B1F-4C1B-BD5A-9852E5F0C8C2}</Project>
       <Name>CLRNetSystem</Name>
     </ProjectReference>
+    <ProjectReference Include="src\CLRNetHost\CLRNetHost.vcxproj">
+      <Project>{9F05A3F2-2F3C-436C-9B8C-045386CFB7A3}</Project>
+      <Name>CLRNetHost</Name>
+    </ProjectReference>
     <ProjectReference Include="tests\CLRNetTests\CLRNetTests.vcxproj">
-      <Project>{12345678-1234-5678-9012-123456789015}</Project>
+      <Project>{4B3E8C7E-5FA6-4F16-B5E8-5E0F0C52F51F}</Project>
       <Name>CLRNetTests</Name>
     </ProjectReference>
   </ItemGroup>
@@ -92,11 +96,15 @@
     <MSBuild Projects="src\CLRNetSystem\CLRNetSystem.vcxproj" Properties="Configuration=$(Configuration);Platform=$(Platform)" />
   </Target>
 
-  <Target Name="BuildTests" DependsOnTargets="BuildCore;BuildInterop;BuildSystem">
+  <Target Name="BuildHost" DependsOnTargets="BuildCore;BuildInterop;BuildSystem">
+    <MSBuild Projects="src\CLRNetHost\CLRNetHost.vcxproj" Properties="Configuration=$(Configuration);Platform=$(Platform)" />
+  </Target>
+
+  <Target Name="BuildTests" DependsOnTargets="BuildCore;BuildInterop;BuildSystem;BuildHost">
     <MSBuild Projects="tests\CLRNetTests\CLRNetTests.vcxproj" Properties="Configuration=$(Configuration);Platform=$(Platform)" />
   </Target>
 
-  <Target Name="Build" DependsOnTargets="BuildCore;BuildInterop;BuildSystem;BuildTests">
+  <Target Name="Build" DependsOnTargets="BuildCore;BuildInterop;BuildSystem;BuildHost;BuildTests">
     <Message Text="CLRNet Runtime build completed successfully!" Importance="high" />
   </Target>
 
@@ -107,31 +115,37 @@
     <MSBuild Projects="src\CLRNetCore\CLRNetCore.vcxproj" Targets="Clean" Properties="Configuration=$(Configuration);Platform=$(Platform)" />
     <MSBuild Projects="src\CLRNetInterop\CLRNetInterop.vcxproj" Targets="Clean" Properties="Configuration=$(Configuration);Platform=$(Platform)" />
     <MSBuild Projects="src\CLRNetSystem\CLRNetSystem.vcxproj" Targets="Clean" Properties="Configuration=$(Configuration);Platform=$(Platform)" />
+    <MSBuild Projects="src\CLRNetHost\CLRNetHost.vcxproj" Targets="Clean" Properties="Configuration=$(Configuration);Platform=$(Platform)" />
     <MSBuild Projects="tests\CLRNetTests\CLRNetTests.vcxproj" Targets="Clean" Properties="Configuration=$(Configuration);Platform=$(Platform)" />
   </Target>
 
   <!-- Package Target -->
   <Target Name="Package" DependsOnTargets="Build">
     <ItemGroup>
-      <CoreBinaries Include="$(OutputPath)CLRNetCore.dll;$(OutputPath)CLRNetHost.exe;$(OutputPath)CLRNetJIT.dll;$(OutputPath)CLRNetGC.dll" />
-      <InteropBinaries Include="$(OutputPath)CLRNetInterop.dll;$(OutputPath)CLRNetWinRT.dll;$(OutputPath)CLRNetHardware.dll;$(OutputPath)CLRNetSecurity.dll" />
-      <SystemBinaries Include="$(OutputPath)CLRNetReplacer.exe;$(OutputPath)CLRNetHooks.dll;$(OutputPath)CLRNetCompat.dll;$(OutputPath)CLRNetSafety.dll" />
+      <CoreBinaries Include="$(OutputPath)CLRNetCore.dll" />
+      <InteropBinaries Include="$(OutputPath)CLRNetInterop.dll" />
+      <SystemBinaries Include="$(OutputPath)CLRNetSystem.dll" />
+      <HostBinaries Include="$(OutputPath)CLRNetHost.exe" />
+      <TestBinaries Include="$(OutputPath)CLRNetTests.exe" />
     </ItemGroup>
 
     <!-- Create deployment packages -->
     <MakeDir Directories="$(OutputPath)packages\" />
-    
+
     <!-- Core Runtime Package -->
     <Copy SourceFiles="@(CoreBinaries)" DestinationFolder="$(OutputPath)packages\CLRNet-Runtime\" />
-    
+
     <!-- Interop Package -->
     <Copy SourceFiles="@(InteropBinaries)" DestinationFolder="$(OutputPath)packages\CLRNet-Interop\" />
-    
+
     <!-- System Package -->
     <Copy SourceFiles="@(SystemBinaries)" DestinationFolder="$(OutputPath)packages\CLRNet-System\" />
-    
+
+    <!-- Host Package -->
+    <Copy SourceFiles="@(HostBinaries)" DestinationFolder="$(OutputPath)packages\CLRNet-Host\" />
+
     <!-- Complete Package -->
-    <Copy SourceFiles="@(CoreBinaries);@(InteropBinaries);@(SystemBinaries)" DestinationFolder="$(OutputPath)packages\CLRNet-Complete\" />
+    <Copy SourceFiles="@(CoreBinaries);@(InteropBinaries);@(SystemBinaries);@(HostBinaries);@(TestBinaries)" DestinationFolder="$(OutputPath)packages\CLRNet-Complete\" />
 
     <Message Text="Deployment packages created in $(OutputPath)packages\" Importance="high" />
   </Target>

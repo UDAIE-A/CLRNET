@@ -1,0 +1,18 @@
+# Build output
+/out/
+/build/
+/artifacts/
+
+# Native build leftovers
+CMakeCache.txt
+CMakeFiles/
+cmake-build-*/
+
+# .NET build output
+bin/
+obj/
+.vs/
+
+# Generated scripts and logs
+*.log
+*.cache

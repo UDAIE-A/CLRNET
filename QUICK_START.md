@@ -1,172 +1,56 @@
-# CLRNet Quick Start Guide
+# Quick start
 
-## 🚀 5-Minute Integration
+This guide walks through building the Windows Phone 8.1 runtime and host from a
+fresh clone.
 
-Get your Windows Phone 8.1 app running with CLRNet in just 5 minutes!
+## 1. Install prerequisites
 
-### Step 1: Add CLRNet to Your Project (1 minute)
+- Windows 10 or 11
+- Visual Studio 2019/2022 with the *Windows Phone 8.1* components
+- Windows Phone 8.1 SDK (`C:\Program Files (x86)\Windows Phone Kits\8.1`)
+- PowerShell 5.0+
 
-1. **Copy CLRNet Binaries**
-   ```
-   YourApp/
-   ├── CLRNet/
-   │   ├── CLRNetCore.dll
-   │   ├── CLRNetInterop.dll
-   │   ├── CLRNetSystem.dll
-   │   └── CLRNetHost.exe
-   └── SamplePlugin.dll
-   ```
+## 2. Build everything with a single command
 
-2. **Update Your .csproj File**
-   ```xml
-   <ItemGroup>
-     <Content Include="CLRNet\*.dll">
-       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-     </Content>
-   </ItemGroup>
-   ```
-
-### Step 2: Initialize CLRNet (2 minutes)
-
-Add this to your `MainPage.xaml.cs`:
-
-```csharp
-using System.Runtime.InteropServices;
-
-public sealed partial class MainPage : Page
-{
-    [DllImport("CLRNetCore.dll")]
-    private static extern int CLRNet_Initialize(IntPtr config);
-    
-    [DllImport("CLRNetCore.dll")]
-    private static extern int CLRNet_LoadAssembly(string path);
-    
-    [DllImport("CLRNetCore.dll")]
-    private static extern int CLRNet_ExecuteMethod(string type, string method);
-
-    protected override void OnNavigatedTo(NavigationEventArgs e)
-    {
-        // Initialize CLRNet
-        CLRNet_Initialize(IntPtr.Zero);
-    }
-}
+```powershell
+pwsh .\build-wp81.ps1 -Configuration Release -Platform ARM
 ```
 
-### Step 3: Load and Execute (1 minute)
+The script validates the SDK, locates MSBuild, and drives `CLRNet.proj` to build
+all native libraries, the phone host, and the smoke-test executable. Logs are
+written to `build/logs/` for troubleshooting.
 
-```csharp
-private void RunPlugin_Click(object sender, RoutedEventArgs e)
-{
-    // Load your plugin
-    CLRNet_LoadAssembly("SamplePlugin.dll");
-    
-    // Execute plugin method
-    CLRNet_ExecuteMethod("PluginMain", "HelloWorld");
-}
+## 3. Package binaries
+
+```powershell
+pwsh .\build-wp81.ps1 -Target Package -Configuration Release -Platform ARM
 ```
 
-### Step 4: Update Package Manifest (1 minute)
+Packaging copies the runtime, interop, system, host, and test artifacts into the
+`build/bin/ARM/Release/packages/` folder ready to be merged into an AppX payload.
 
-Add to `Package.appxmanifest`:
+## 4. Inspect outputs
 
-```xml
-<Extension Category="windows.activatableClass.inProcessServer">
-  <InProcessServer>
-    <Path>CLRNet\CLRNetCore.dll</Path>
-    <ActivatableClass ActivatableClassId="CLRNet.Runtime" ThreadingModel="both" />
-  </InProcessServer>
-</Extension>
-```
+- `build/bin/ARM/<Config>/CLRNetCore.dll`
+- `build/bin/ARM/<Config>/CLRNetInterop.dll`
+- `build/bin/ARM/<Config>/CLRNetSystem.dll`
+- `build/bin/ARM/<Config>/CLRNetHost.exe`
+- `build/bin/ARM/<Config>/CLRNetTests.exe`
 
-## ✅ That's It!
+## 5. Run the smoke tests
 
-Your app now has dynamic .NET assembly loading capabilities!
+Copy the runtime folder to a Windows Phone 8.1 device or emulator and launch
+`CLRNetTests.exe`. The test harness verifies that the execution engine, security
+layer, and interop managers all initialize correctly in the phone environment.
 
-## 🔥 Advanced Usage (Optional)
+## 6. Integrate into your AppX project
 
-### Plugin Interface
-```csharp
-public interface IMyPlugin
-{
-    void Initialize();
-    string Execute(string input);
-}
+1. Copy the binaries from `build/bin/ARM/Release/` into your app's `CLRNet/`
+   directory.
+2. Include the host executable in the AppX manifest and add the required phone
+   capabilities.
+3. Bundle the `packages/CLRNet-Complete/` contents alongside your managed
+   assemblies before creating the final XAP/AppX package.
 
-// In your plugin assembly
-public class MyPlugin : IMyPlugin
-{
-    public void Initialize() { /* setup */ }
-    public string Execute(string input) { return "Processed: " + input; }
-}
-```
-
-### Dynamic Code Compilation
-```csharp
-// Compile C# code at runtime
-string code = @"
-    public class RuntimeCode
-    {
-        public static string Process() { return ""Hello from runtime!""; }
-    }";
-
-// CLRNet can compile and execute this dynamically
-```
-
-### Game Modding System
-```csharp
-public class GameModLoader
-{
-    public async Task LoadMod(string modFile)
-    {
-        await CLRNet_LoadAssembly(modFile);
-        CLRNet_ExecuteMethod("GameMod", "OnModLoaded");
-    }
-}
-```
-
-## 📱 Real-World Examples
-
-### 1. **Business Rules Engine**
-Load business logic from external assemblies without app updates.
-
-### 2. **Plugin Marketplace**
-Allow users to download and install app extensions.
-
-### 3. **Dynamic UI Generation**
-Create UI components from user-defined templates.
-
-### 4. **Scripting System**
-Enable power users to write custom scripts.
-
-### 5. **A/B Testing Framework**
-Load different feature implementations dynamically.
-
-## 🛠️ Troubleshooting
-
-**Runtime not initializing?**
-- Check if CLRNet binaries are in your app package
-- Verify Package.appxmanifest has the extension registration
-
-**Assembly won't load?**
-- Ensure assembly targets .NET Framework 4.0
-- Check file path is correct
-
-**Method execution fails?**
-- Verify class and method names are exact
-- Check method is public and static
-
-## 🎯 Next Steps
-
-1. **Read the full [Implementation Guide](IMPLEMENTATION_GUIDE.md)**
-2. **Check out the [complete sample app](examples/WP81Integration/)**
-3. **Explore advanced patterns and best practices**
-
-## 💡 Pro Tips
-
-- Initialize CLRNet once at app startup
-- Cache loaded assemblies for better performance
-- Use background threads for heavy operations
-- Always handle exceptions gracefully
-- Test on actual Windows Phone devices
-
-**Happy Coding with CLRNet! 🎉**
+For a deeper dive into deployment practices review `build/README.md` and the
+`WP81_*` summaries in the repository root.
